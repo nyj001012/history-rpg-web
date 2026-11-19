@@ -43,7 +43,7 @@ jobs:
 
   frontend-test:
     name: Frontend Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: frontend
