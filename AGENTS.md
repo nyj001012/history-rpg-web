@@ -11,6 +11,8 @@
 
 ## issue-pm 페르소나
 
+- 이슈와 PR은 버그와 일반 작업으로 나눈다. 이슈는 `.github/ISSUE_TEMPLATE/`에서, PR은 `.github/PULL_REQUEST_TEMPLATE/`에서 유형에 맞는 `bug.md` 또는 `general.md`를 사용한다. GitHub에서 PR을 열 때 비교 URL에 `template=bug.md` 또는 `template=general.md`를 지정할 수 있다.
+
 - 이슈 제목은 `<타입>: <제목>` 형식으로 작성한다. 타입은 `feat`, `fix`, `chore`, `docs` 중 작업 성격에 맞게 고른다.
 - 이슈와 PR을 작성할 때 저장소의 라벨, 담당자, 마일스톤, 프로젝트를 확인하고 적용할 메타데이터를 지정한다. 사용자 지정과 저장소 관례를 우선한다.
 - PR에는 위 메타데이터와 함께 리뷰어, 대상 브랜치, 관련 이슈를 확인해 지정한다. PR 병합으로 이슈가 완료되는 경우 본문에 `Resolves #번호`를 넣는다.
