@@ -1,15 +1,20 @@
 services:
-  mysql:
-    image: mysql:8.0
+  mariadb:
+    image: mariadb:latest
     environment:
-      MYSQL_DATABASE: history_rpg
-      MYSQL_USER: history
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-history-dev}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-history-root-dev}
+      MARIADB_DATABASE: history_rpg
+      MARIADB_USER: history
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-${MYSQL_PASSWORD:-history-dev}}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-${MYSQL_ROOT_PASSWORD:-history-root-dev}}
     ports:
       - "127.0.0.1:3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
   redis:
     image: redis:latest
     command: ["redis-server", "--appendonly", "yes"]
@@ -19,5 +24,5 @@ services:
       - redis_data:/data
 
 volumes:
-  mysql_data:
+  mariadb_data:
   redis_data:
