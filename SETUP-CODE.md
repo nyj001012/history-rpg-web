@@ -17,9 +17,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
 
 permissions:
   contents: read
@@ -65,7 +65,7 @@ jobs:
   deploy-placeholder:
     name: Deploy Placeholder
     needs: [backend-test, frontend-test]
-    if: ${{ needs.backend-test.result == 'success' && needs.frontend-test.result == 'success' }}
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.backend-test.result == 'success' && needs.frontend-test.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - run: echo "Deploy to Vultr K8s via ArgoCD"
@@ -137,7 +137,7 @@ npm run build
 
 백엔드 테스트는 실제 FastAPI 헬스 엔드포인트를 호출한다. Playwright는 API 응답을 모의해 연결 성공과 실패 화면을 검증한다. 실제 프런트엔드와 백엔드 연결은 두 서버를 함께 실행해 확인할 수 있다.
 
-GitHub Actions는 `main`에 대한 push와 pull request에서 두 테스트 작업을 실행한다. 둘 다 성공하면 배포 자리표시 작업이 실행된다. 이 워크플로를 사용하려면 `history-rpg-web`을 GitHub 저장소의 루트로 사용한다. `k8s/`는 VKE 및 ArgoCD 매니페스트를 추가할 위치다.
+개발 작업은 `dev`에서 분기하고 PR로 `dev`에 합친다. 릴리즈할 때 `dev`에서 `main`으로 PR을 열어 병합한다. GitHub Actions는 두 브랜치의 push와 PR에서 테스트를 실행한다. `main`의 push에서 두 테스트가 통과하면 배포 자리표시 작업이 실행된다. 이 워크플로를 사용하려면 `history-rpg-web`을 GitHub 저장소의 루트로 사용한다. `k8s/`는 VKE 및 ArgoCD 매니페스트를 추가할 위치다.
 
 [설치 명령과 전체 초기 코드](SETUP-CODE.md)
 ````

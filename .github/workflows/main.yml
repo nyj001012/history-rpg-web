@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
 
 permissions:
   contents: read
@@ -50,7 +50,7 @@ jobs:
   deploy-placeholder:
     name: Deploy Placeholder
     needs: [backend-test, frontend-test]
-    if: ${{ needs.backend-test.result == 'success' && needs.frontend-test.result == 'success' }}
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.backend-test.result == 'success' && needs.frontend-test.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - run: echo "Deploy to Vultr K8s via ArgoCD"
