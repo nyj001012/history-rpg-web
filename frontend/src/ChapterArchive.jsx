@@ -1,4 +1,5 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
+import { ChapterChat, hasChatScenario } from './ChapterChat.jsx';
 
 export const mockArchive = {
   resumeChapterId: 'french-revolution',
@@ -68,14 +69,16 @@ const statusLabels = {
 
 const formatNumber = (number) => String(number).padStart(2, '0');
 
-function ChapterCard({ chapter, onSelect }) {
+function ChapterCard({ chapter }) {
+  const locked = chapter.status === 'locked' || !hasChatScenario(chapter.id);
+  const Card = locked ? 'button' : 'a';
   return (
     <li>
-      <button
+      <Card
         className="chapter-card"
-        type="button"
-        disabled={chapter.status === 'locked'}
-        onClick={() => onSelect(chapter)}
+        type={locked ? 'button' : undefined}
+        disabled={locked || undefined}
+        href={locked ? undefined : `#play/${chapter.id}`}
       >
         <span className="chapter-photo">
           <span className={`chapter-scene chapter-scene--${chapter.scene}`} aria-hidden="true">
@@ -93,7 +96,7 @@ function ChapterCard({ chapter, onSelect }) {
           </span>
           <span className="chapter-place">{chapter.place}</span>
         </span>
-      </button>
+      </Card>
     </li>
   );
 }
@@ -101,23 +104,35 @@ function ChapterCard({ chapter, onSelect }) {
 export function ChapterArchive({ archive }) {
   const { chapters, resumeChapterId } = archive;
   const [dialogContent, setDialogContent] = useState(null);
+  const [hash, setHash] = useState(() => window.location.hash);
   const dialogRef = useRef(null);
+  const headingRef = useRef(null);
+  const wasPlaying = useRef(false);
   const openChapters = chapters.filter((chapter) => chapter.status !== 'locked');
   const resumeChapter = openChapters.find((chapter) => chapter.id === resumeChapterId);
+  const activeChapter = openChapters.find((chapter) => hasChatScenario(chapter.id) && hash === `#play/${chapter.id}`);
+
+  useLayoutEffect(() => {
+    function updateHash() {
+      if (dialogRef.current?.open) dialogRef.current.close();
+      setDialogContent(null);
+      setHash(window.location.hash);
+    }
+    window.addEventListener('hashchange', updateHash);
+    return () => window.removeEventListener('hashchange', updateHash);
+  }, []);
 
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
-    if (dialogContent && !dialog.open) dialog.showModal();
+    if (dialogContent && dialog && !dialog.open) dialog.showModal();
   }, [dialogContent]);
 
-  function selectChapter(chapter) {
-    setDialogContent({
-      label: `CHAPTER ${formatNumber(chapter.number)} / ${statusLabels[chapter.status]}`,
-      title: chapter.title,
-      context: `${chapter.year}년, ${chapter.place}`,
-      text: '이 챕터는 미리보기 상태입니다. 게임 플레이는 준비 중입니다.',
-    });
-  }
+  useLayoutEffect(() => {
+    if (!activeChapter && wasPlaying.current) headingRef.current?.focus();
+    wasPlaying.current = Boolean(activeChapter);
+  }, [activeChapter]);
+
+  if (activeChapter) return <ChapterChat key={activeChapter.id} chapter={activeChapter} />;
 
   return (
     <div className="chapter-archive">
@@ -149,13 +164,13 @@ export function ChapterArchive({ archive }) {
               <span className="archive-label">what if...</span>
               <span>열람자 [닉네임]</span>
             </div>
-            <h1 id="archive-heading">어느 역사를 경험해보시겠습니까?</h1>
+            <h1 id="archive-heading" ref={headingRef} tabIndex="-1">어느 역사를 경험해보시겠습니까?</h1>
             <p className="archive-lede">마음이 가는 이야기를 골라보세요.</p>
           </section>
 
           <ul id="chapters" className="chapter-grid" aria-label="챕터 목차">
             {chapters.map((chapter) => (
-              <ChapterCard key={chapter.id} chapter={chapter} onSelect={selectChapter} />
+              <ChapterCard key={chapter.id} chapter={chapter} />
             ))}
           </ul>
         </main>
@@ -177,7 +192,7 @@ export function ChapterArchive({ archive }) {
         type="button"
         onClick={() => setDialogContent({
           title: '기록보관소 이용 안내',
-          text: '열람 가능한 챕터를 선택해 기록을 미리 볼 수 있습니다. 잠긴 챕터는 열람할 수 없습니다.',
+          text: '열람 가능한 챕터를 선택해 이야기를 시작할 수 있습니다. 잠긴 챕터는 열람할 수 없습니다.',
         })}
       >
         ?
@@ -189,9 +204,7 @@ export function ChapterArchive({ archive }) {
         aria-labelledby="archive-dialog-title"
         onClose={() => setDialogContent(null)}
       >
-        {dialogContent?.label && <p className="archive-label">{dialogContent.label}</p>}
         <h2 id="archive-dialog-title">{dialogContent?.title}</h2>
-        {dialogContent?.context && <p className="archive-dialog-context">{dialogContent.context}</p>}
         {dialogContent?.text && <p>{dialogContent.text}</p>}
         {dialogContent?.diagnostics && <a href="/connection">서버 연결 확인</a>}
         <form method="dialog">
