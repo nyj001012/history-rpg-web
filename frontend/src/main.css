@@ -1,13 +1,44 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+  font-family: 'RIDIBatang';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_twelve@1.0/RIDIBatang.woff') format('woff');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Kyobo Handwriting 2020';
+  src: local('KyoboHandwriting2020pdy'), local('Kyobo Handwriting 2020 pdy'), local('교보 손글씨 2020 박도연');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DungGeunMo';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  --font-display: 'RIDIBatang', 'Nanum Myeongjo', 'Batang', 'Noto Serif CJK KR', 'Noto Serif KR', serif;
+  --font-ui: 'Pretendard Variable', 'Malgun Gothic', 'Noto Sans CJK KR', 'Noto Sans KR', system-ui, sans-serif;
+  --font-handwriting: 'Kyobo Handwriting 2020', 'Nanum Pen Script', 'Apple Chancery', var(--font-ui);
+  --font-pixel: 'DungGeunMo', var(--font-ui);
+}
 
 .chapter-archive {
   --archive-paper: #e8e0cf;
   --archive-ink: #19232a;
   --archive-red: #a4261d;
-  --archive-serif: 'Nanum Myeongjo', 'Batang', 'Noto Serif CJK KR', 'Noto Serif KR', serif;
-  --archive-sans: 'Malgun Gothic', 'Noto Sans CJK KR', 'Noto Sans KR', system-ui, sans-serif;
   min-height: 100vh;
   color: var(--archive-ink);
   background-color: var(--archive-paper);
@@ -15,7 +46,6 @@
     linear-gradient(90deg, #796a4c14 1px, transparent 1px),
     linear-gradient(#796a4c12 1px, transparent 1px);
   background-size: 30px 30px;
-  font-family: var(--archive-serif);
 }
 
 .archive-sheet {
@@ -33,13 +63,11 @@
   border-bottom: 2px solid var(--archive-ink);
 }
 
-.archive-label,
-.archive-header-tools,
-.archive-intro-line,
-.chapter-stamp,
-.chapter-number,
-.archive-resume {
-  font-family: var(--archive-sans);
+.archive-brand,
+.archive-intro h1,
+.chapter-title,
+.archive-dialog .archive-label + h2 {
+  font-family: var(--font-display);
 }
 
 .archive-label {
@@ -108,7 +136,7 @@
   color: #484e47;
   font-size: clamp(2.375rem, 4.65vw, 4.65rem);
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.3;
   letter-spacing: -0.07em;
   text-wrap: balance;
 }
@@ -371,6 +399,7 @@
 }
 
 .chapter-year {
+  font-family: var(--font-ui);
   font-size: 0.53em;
   font-style: italic;
 }
@@ -407,7 +436,7 @@
   font-size: 0.5625rem;
 }
 
-.archive-resume {
+.archive-resume:not([hidden]) {
   position: fixed;
   z-index: 2;
   bottom: max(20px, env(safe-area-inset-bottom));
@@ -420,6 +449,7 @@
   background: #df3024;
   box-shadow: 5px 6px 0 var(--archive-ink);
   color: #fff;
+  font-family: var(--font-pixel);
   text-align: left;
 }
 
@@ -429,6 +459,7 @@
 
 .archive-resume strong {
   font-size: 0.8125rem;
+  font-weight: 400;
 }
 
 .archive-help {
