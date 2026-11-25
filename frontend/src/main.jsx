@@ -56,7 +56,7 @@ function ConnectionDiagnostics() {
 const isDiagnostics = window.location.pathname.replace(/\/$/, '') === '/connection';
 
 if (!isDiagnostics) {
-  document.title = '어긋난 연대기';
+  document.title = '이야기 속으로';
 }
 
 createRoot(document.getElementById('root')).render(

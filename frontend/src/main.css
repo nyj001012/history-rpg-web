@@ -12,10 +12,9 @@
   color: var(--archive-ink);
   background-color: var(--archive-paper);
   background-image:
-    linear-gradient(90deg, transparent calc(50% - 3px), #71674e14 50%, transparent calc(50% + 4px)),
-    radial-gradient(ellipse at 15% 18%, #796a4c14 0 1px, transparent 1.7px),
-    radial-gradient(ellipse at 71% 78%, #796a4c12 0 1px, transparent 1.6px);
-  background-size: 100% 100%, 21px 25px, 37px 31px;
+    linear-gradient(90deg, #796a4c14 1px, transparent 1px),
+    linear-gradient(#796a4c12 1px, transparent 1px);
+  background-size: 30px 30px;
   font-family: var(--archive-serif);
 }
 
@@ -401,8 +400,7 @@
 
 .archive-footer {
   display: flex;
-  justify-content: space-between;
-  gap: 10px;
+  justify-content: flex-end;
   margin-top: 55px;
   padding-top: 10px;
   border-top: 2px solid var(--archive-ink);

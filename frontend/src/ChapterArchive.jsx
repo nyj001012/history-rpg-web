@@ -124,8 +124,8 @@ export function ChapterArchive({ archive }) {
       <div className="archive-sheet">
         <header className="archive-header">
           <div>
-            <p className="archive-label">대체역사 기록보관소</p>
-            <p className="archive-brand">어긋난 연대기</p>
+            <p className="archive-label">대체역사 시뮬레이터</p>
+            <p className="archive-brand">이야기 속으로</p>
           </div>
           <div className="archive-header-tools">
             <a className="archive-index" href="#chapters">
@@ -146,11 +146,11 @@ export function ChapterArchive({ archive }) {
         <main>
           <section className="archive-intro" aria-labelledby="archive-heading">
             <div className="archive-intro-line">
-              <span className="archive-label">금지된 역사 기록</span>
-              <span>열람자 404호</span>
+              <span className="archive-label">what if...</span>
+              <span>열람자 [닉네임]</span>
             </div>
-            <h1 id="archive-heading">어느 역사를 망쳐보시겠습니까?</h1>
-            <p className="archive-lede">한 장을 고르는 순간, 원래의 역사는 책임지지 않습니다.</p>
+            <h1 id="archive-heading">어느 역사를 경험해보시겠습니까?</h1>
+            <p className="archive-lede">마음이 가는 이야기를 골라보세요.</p>
           </section>
 
           <ul id="chapters" className="chapter-grid" aria-label="챕터 목차">
@@ -161,7 +161,6 @@ export function ChapterArchive({ archive }) {
         </main>
 
         <footer className="archive-footer">
-          <span>역사 왜곡 방지 위원회 비인가 자료</span>
           <span>전체 {formatNumber(chapters.length)}권 / 열람 가능 {formatNumber(openChapters.length)}권</span>
         </footer>
       </div>
