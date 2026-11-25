@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { motion, useReducedMotion } from 'framer-motion';
 import { create } from 'zustand';
+import { ChapterArchive, mockArchive } from './ChapterArchive.jsx';
 import './main.css';
 
 const useConnection = create((set) => ({
@@ -25,7 +26,7 @@ const messages = {
   offline: '서버에 연결할 수 없습니다.',
 };
 
-function App() {
+function ConnectionDiagnostics() {
   const status = useConnection((state) => state.status);
   const check = useConnection((state) => state.check);
   const reduceMotion = useReducedMotion();
@@ -52,4 +53,12 @@ function App() {
   );
 }
 
-createRoot(document.getElementById('root')).render(<App />);
+const isDiagnostics = window.location.pathname.replace(/\/$/, '') === '/connection';
+
+if (!isDiagnostics) {
+  document.title = '어긋난 연대기';
+}
+
+createRoot(document.getElementById('root')).render(
+  isDiagnostics ? <ConnectionDiagnostics /> : <ChapterArchive archive={mockArchive} />,
+);

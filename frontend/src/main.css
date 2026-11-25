@@ -1,3 +1,541 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.chapter-archive {
+  --archive-paper: #e8e0cf;
+  --archive-ink: #19232a;
+  --archive-red: #a4261d;
+  --archive-serif: 'Nanum Myeongjo', 'Batang', 'Noto Serif CJK KR', 'Noto Serif KR', serif;
+  --archive-sans: 'Malgun Gothic', 'Noto Sans CJK KR', 'Noto Sans KR', system-ui, sans-serif;
+  min-height: 100vh;
+  color: var(--archive-ink);
+  background-color: var(--archive-paper);
+  background-image:
+    linear-gradient(90deg, transparent calc(50% - 3px), #71674e14 50%, transparent calc(50% + 4px)),
+    radial-gradient(ellipse at 15% 18%, #796a4c14 0 1px, transparent 1.7px),
+    radial-gradient(ellipse at 71% 78%, #796a4c12 0 1px, transparent 1.6px);
+  background-size: 100% 100%, 21px 25px, 37px 31px;
+  font-family: var(--archive-serif);
+}
+
+.archive-sheet {
+  width: 89.5%;
+  max-width: 1560px;
+  margin-inline: auto;
+  padding-bottom: 130px;
+}
+
+.archive-header {
+  display: flex;
+  min-height: 91px;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid var(--archive-ink);
+}
+
+.archive-label,
+.archive-header-tools,
+.archive-intro-line,
+.chapter-stamp,
+.chapter-number,
+.archive-resume {
+  font-family: var(--archive-sans);
+}
+
+.archive-label {
+  color: var(--archive-red);
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+
+.archive-brand {
+  margin-top: 2px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.06em;
+}
+
+.archive-header-tools {
+  display: flex;
+  align-items: center;
+}
+
+.archive-index {
+  display: grid;
+  justify-items: end;
+  padding: 5px 13px;
+  font-size: 0.625rem;
+  font-weight: 750;
+  letter-spacing: 0.065em;
+}
+
+.archive-settings {
+  width: 44px;
+  height: 44px;
+  border-left: 1px solid #544f4535;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.archive-intro {
+  padding-block: 70px 50px;
+}
+
+.archive-intro-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.5625rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+}
+
+.archive-intro-line::before {
+  content: '';
+  height: 1px;
+  flex: 1;
+  order: 1;
+  background: #544f4555;
+}
+
+.archive-intro-line > :last-child {
+  order: 2;
+}
+
+.archive-intro h1 {
+  margin: 26px 0 22px;
+  color: #484e47;
+  font-size: clamp(2.375rem, 4.65vw, 4.65rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.07em;
+  text-wrap: balance;
+}
+
+.archive-lede {
+  padding-left: 11px;
+  border-left: 3px solid #d83225;
+  color: #605b50;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.chapter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 60px 2.7%;
+  scroll-margin-top: 18px;
+}
+
+.chapter-card {
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-align: left;
+}
+
+.chapter-photo {
+  position: relative;
+  display: block;
+  padding: 10px 10px 30px;
+  border: 1px solid #aaa48e80;
+  background: #f3eddf;
+  box-shadow: 4px 7px 0 #22251926;
+}
+
+.chapter-photo::before,
+.chapter-photo::after {
+  position: absolute;
+  z-index: 1;
+  top: -9px;
+  width: 12%;
+  height: 19px;
+  content: '';
+  background: linear-gradient(175deg, #bfad7f, #d8c794 50%, #cabb8e);
+  opacity: 0.77;
+}
+
+.chapter-photo::before {
+  left: 5%;
+  transform: rotate(-5deg);
+}
+
+.chapter-photo::after {
+  right: 5%;
+  transform: rotate(7deg);
+}
+
+.chapter-scene {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  isolation: isolate;
+  aspect-ratio: 1.48;
+  background: radial-gradient(ellipse at 52% 26%, #bca47d, #9f8a66 82%);
+}
+
+.chapter-scene::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  content: '';
+  background:
+    radial-gradient(circle closest-side, #e4cb97 98%, transparent) 91.5% 14% / 15% 22% no-repeat,
+    radial-gradient(ellipse at center, #514936 69%, transparent 70%) center 146% / 120% 53% no-repeat;
+}
+
+.chapter-scene::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background:
+    repeating-linear-gradient(96deg, #fcf0cf4f 0 1px, transparent 2px 11%),
+    repeating-linear-gradient(-7deg, #fcf0cf27 0 1px, transparent 2px 12px),
+    radial-gradient(ellipse at center, transparent 46%, #2926194d 100%);
+}
+
+.scene-figure {
+  position: absolute;
+  bottom: 16%;
+  width: 4.8%;
+  height: 24%;
+  background: #302c20;
+}
+
+.scene-figure::before {
+  position: absolute;
+  bottom: 96%;
+  left: 6%;
+  width: 88%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: inherit;
+  content: '';
+}
+
+.scene-figure--left {
+  left: 19%;
+  transform: rotate(-4deg);
+}
+
+.scene-figure--middle {
+  left: 29%;
+  height: 28%;
+}
+
+.scene-figure--right {
+  right: 18%;
+  height: 22%;
+  transform: rotate(5deg);
+}
+
+.scene-landmark {
+  position: absolute;
+  bottom: 17%;
+  color: #3c382b;
+}
+
+.chapter-scene--gate .scene-landmark {
+  left: 43.5%;
+  width: 21.5%;
+  height: 38%;
+  border: solid currentColor;
+  border-width: 7px 7px 0;
+}
+
+.chapter-scene--gate .scene-landmark::before {
+  position: absolute;
+  inset: auto 13% 100%;
+  height: 29%;
+  content: '';
+  background: currentColor;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.chapter-scene--palace .scene-landmark {
+  left: 18.5%;
+  width: 63%;
+  height: 30%;
+  border-top: clamp(8px, 1.3vw, 21px) solid currentColor;
+  background: repeating-linear-gradient(90deg, currentColor 0 4%, transparent 4% 7.7%);
+}
+
+.chapter-scene--palace .scene-landmark::before {
+  position: absolute;
+  bottom: 124%;
+  left: 35%;
+  width: 31%;
+  height: 77%;
+  content: '';
+  background: currentColor;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.chapter-scene--city .scene-landmark {
+  left: 15%;
+  width: 70%;
+  height: 49%;
+  background: currentColor;
+  clip-path: polygon(
+    0 100%, 0 28%, 15% 28%, 15% 5%, 30% 5%, 30% 100%, 33% 100%, 33% 35%, 48% 35%,
+    48% 0, 66% 0, 66% 100%, 69% 100%, 69% 20%, 82% 20%, 82% 9%, 90% 9%, 90% 100%,
+    93% 100%, 93% 9%, 100% 9%, 100% 100%
+  );
+}
+
+.chapter-scene--moon::before {
+  background-image:
+    radial-gradient(circle closest-side, #eee4c9 98%, transparent),
+    radial-gradient(ellipse at center, #514936 69%, transparent 70%);
+  background-position: 72% 22%, center 146%;
+  background-size: 31% 47%, 120% 53%;
+}
+
+.chapter-scene--moon .scene-landmark {
+  left: 58%;
+  width: 19%;
+  height: 31%;
+  background: currentColor;
+  clip-path: polygon(50% 0, 70% 39%, 100% 54%, 78% 63%, 68% 90%, 33% 90%, 23% 63%, 0 54%, 33% 40%);
+}
+
+.chapter-scene--vinland .scene-landmark {
+  bottom: 19%;
+  left: 39%;
+  width: 16%;
+  height: 36%;
+  background: currentColor;
+  clip-path: polygon(8% 0, 29% 0, 50% 37%, 73% 0, 94% 0, 62% 49%, 97% 100%, 75% 100%, 50% 63%, 25% 100%, 4% 100%, 38% 49%);
+}
+
+.chapter-scene--radio .scene-landmark {
+  bottom: 26%;
+  left: 27%;
+  width: 46%;
+  height: 31%;
+  border: 7px solid currentColor;
+  background: repeating-radial-gradient(circle, currentColor 0 2px, transparent 3px 7px);
+}
+
+.chapter-scene--radio .scene-landmark::before {
+  position: absolute;
+  bottom: 100%;
+  left: 54%;
+  width: 4px;
+  height: 70%;
+  content: '';
+  background: currentColor;
+  transform: rotate(21deg);
+  transform-origin: bottom;
+}
+
+.chapter-stamp {
+  position: absolute;
+  right: 18px;
+  bottom: 8px;
+  padding: 2px 6px;
+  border: 1px solid;
+  color: var(--archive-red);
+  font-size: 0.5625rem;
+  font-weight: 800;
+  transform: rotate(-3deg);
+}
+
+.chapter-caption {
+  display: block;
+  min-height: 116px;
+  padding: 26px 4px 12px;
+  border-bottom: 1px solid;
+}
+
+.chapter-number,
+.chapter-title,
+.chapter-place {
+  display: block;
+}
+
+.chapter-number {
+  color: var(--archive-red);
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.chapter-title {
+  margin-top: 11px;
+  font-size: clamp(1.16rem, 1.65vw, 1.6rem);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.045em;
+}
+
+.chapter-year {
+  font-size: 0.53em;
+  font-style: italic;
+}
+
+.chapter-place {
+  margin-top: 5px;
+  font-size: 0.6875rem;
+}
+
+.chapter-card:disabled {
+  color: #625e55;
+  cursor: default;
+}
+
+.chapter-card:disabled .chapter-photo {
+  opacity: 0.52;
+  filter: grayscale(1);
+}
+
+.chapter-card:disabled .chapter-number {
+  color: inherit;
+}
+
+.chapter-card:not(:disabled):hover .chapter-photo {
+  box-shadow: 4px 7px 0 #29251c58;
+}
+
+.archive-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 55px;
+  padding-top: 10px;
+  border-top: 2px solid var(--archive-ink);
+  font-size: 0.5625rem;
+}
+
+.archive-resume {
+  position: fixed;
+  z-index: 2;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  left: max(19px, env(safe-area-inset-left));
+  display: grid;
+  gap: 3px;
+  max-width: calc(100% - 80px);
+  padding: 11px 16px 13px;
+  border: 1px solid var(--archive-ink);
+  background: #df3024;
+  box-shadow: 5px 6px 0 var(--archive-ink);
+  color: #fff;
+  text-align: left;
+}
+
+.archive-resume span {
+  font-size: 0.5625rem;
+}
+
+.archive-resume strong {
+  font-size: 0.8125rem;
+}
+
+.archive-help {
+  position: fixed;
+  z-index: 2;
+  right: max(10px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  width: 36px;
+  height: 36px;
+  border: 1px solid #57544d;
+  border-radius: 50%;
+  background: #292923;
+  box-shadow: 0 2px 6px #0004;
+  color: white;
+  font-size: 1.25rem;
+}
+
+.chapter-archive :focus-visible {
+  outline: 2px solid var(--archive-red);
+  outline-offset: 4px;
+}
+
+.archive-dialog {
+  width: min(410px, calc(100% - 40px));
+  margin: auto;
+  padding: 27px;
+  border: 1px solid var(--archive-ink);
+  background: #f3eddf;
+  box-shadow: 6px 6px var(--archive-ink);
+  color: var(--archive-ink);
+}
+
+.archive-dialog::backdrop {
+  background: #17191495;
+}
+
+.archive-dialog h2 {
+  margin-block: 3px 8px;
+  font-size: 1.625rem;
+  font-weight: 800;
+}
+
+.archive-dialog p:not(.archive-label),
+.archive-dialog a {
+  margin-top: 5px;
+  font-size: 0.9375rem;
+}
+
+.archive-dialog-context {
+  font-weight: 700;
+}
+
+.archive-dialog a {
+  text-decoration: underline;
+}
+
+.archive-dialog form {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.archive-dialog button {
+  padding: 6px 16px;
+  border: 1px solid var(--archive-ink);
+  font-size: 0.875rem;
+}
+
+@media (max-width: 1000px) {
+  .chapter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 40px 4%;
+  }
+}
+
+@media (max-width: 560px) {
+  .archive-sheet {
+    width: 90%;
+    padding-bottom: 110px;
+  }
+
+  .archive-header {
+    min-height: 70px;
+  }
+
+  .archive-intro {
+    padding-block: 36px 36px;
+  }
+
+  .archive-intro h1 {
+    margin-block: 20px 18px;
+    font-size: clamp(2rem, 8vw, 2.75rem);
+  }
+
+  .chapter-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 34px;
+  }
+
+  .chapter-caption {
+    min-height: auto;
+    padding-top: 21px;
+  }
+
+  .archive-footer {
+    margin-top: 36px;
+  }
+}
