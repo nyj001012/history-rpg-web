@@ -136,7 +136,7 @@
   color: #484e47;
   font-size: clamp(2.375rem, 4.65vw, 4.65rem);
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.3;
   letter-spacing: -0.07em;
   text-wrap: balance;
 }
@@ -436,7 +436,7 @@
   font-size: 0.5625rem;
 }
 
-.archive-resume {
+.archive-resume:not([hidden]) {
   position: fixed;
   z-index: 2;
   bottom: max(20px, env(safe-area-inset-bottom));

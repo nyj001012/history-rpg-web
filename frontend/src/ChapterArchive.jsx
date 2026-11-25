@@ -166,7 +166,7 @@ export function ChapterArchive({ archive }) {
       </div>
 
       {resumeChapter && (
-        <button className="archive-resume" type="button" onClick={() => selectChapter(resumeChapter)}>
+        <button className="archive-resume" type="button" hidden disabled>
           <span>마지막 기록에서</span>
           <strong>이어서 하기 &gt; {resumeChapter.title}</strong>
         </button>
