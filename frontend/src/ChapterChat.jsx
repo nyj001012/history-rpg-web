@@ -1,9 +1,102 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+function InfluenceIcon() {
+  return (
+    <svg
+      className="chat-status-art"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3.5 18 Q 12 21 20.5 18 L 19.5 22 Q 12 24 4.5 22 Z" />
+      <path d="M12 21v.01 M8 20v.01 M16 20v.01" strokeWidth="1.6" />
+      <path d="M12 1 v 4" />
+      <path d="M9.5 3 h 5" />
+      <path d="M4 18 C 1.5 11, 5 6.5, 12 6.5 C 19 6.5, 22.5 11, 20 18" />
+      <path d="M12 19 C 12 12, 8 8, 12 6.5 C 16 8, 12 12, 12 19 Z" />
+      <path d="M7.5 18.5 C 7.5 13, 3.5 10, 6.5 8 C 9.5 10, 10 14, 7.5 18.5 Z" />
+      <path d="M16.5 18.5 C 16.5 13, 20.5 10, 17.5 8 C 14.5 10, 14 14, 16.5 18.5 Z" />
+    </svg>
+  );
+}
+
+function CredibilityMedalIcon() {
+  return (
+    <svg
+      className="chat-status-art"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="9" r="3.5" />
+      <path d="M12 3 L14 4 L16 5 L17 7 L18 9 L17 11 L16 13 L14 14 L12 15 L10 14 L8 13 L7 11 L6 9 L7 7 L8 5 L10 4 Z" />
+      <path d="M9 13.5 L6 22 L9.5 20 L12 22 L12 15 M12 22 L14.5 20 L18 22 L15 13.5" />
+    </svg>
+  );
+}
+
+function IdeologyIcon() {
+  return (
+    <svg
+      className="chat-status-art"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      aria-hidden="true"
+    >
+      <path d="M12 3v17" />
+      <path d="M8 21h8" />
+      <path d="M5 6h14" />
+      <circle cx="12" cy="6" r="1" />
+      <path d="M3 13l2-7l2 7" />
+      <path d="M2 13h6" />
+      <path d="M2 13c0 2 1.5 3 3 3s3-1 3-3" />
+      <path d="M17 13l2-7l2 7" />
+      <path d="M16 13h6" />
+      <path d="M16 13c0 2 1.5 3 3 3s3-1 3-3" />
+    </svg>
+  );
+}
+
+function MethodIcon() {
+  return (
+    <svg
+      className="chat-status-art"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M6 16 Q 12 8 21 3 Q 16 12 8 18 Z" />
+      <path d="M7 17 L 19 5" strokeWidth="0.8" />
+      <path d="M4 14 Q 8.5 15.5 10 20" />
+      <path d="M7 17 L 4 20" />
+      <circle cx="3" cy="21" r="1" />
+      <path d="M18 16 Q 12 8 3 3 Q 8 12 16 18 Z" />
+      <path d="M17 17 L 5 5" strokeWidth="0.8" />
+      <path d="M20 14 Q 15.5 15.5 14 20" />
+      <path d="M17 17 L 20 20" />
+      <circle cx="21" cy="21" r="1" />
+    </svg>
+  );
+}
+
 const statTypes = [
-  { icon: '⚖︎', name: '사상' },
-  { icon: '⚔︎', name: '수단' },
-  { icon: '♕', name: '영향력' },
+  { icon: <IdeologyIcon />, name: '사상' },
+  { icon: <MethodIcon />, name: '수단' },
+  { icon: <InfluenceIcon />, name: '영향력' },
 ];
 
 const scenarios = {
@@ -73,12 +166,84 @@ const scenarios = {
   },
 };
 
+function ReportIcon() {
+  return (
+    <svg
+      className="chat-status-art"
+      viewBox="-0.75 -0.9 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M 2 5 C 5 3, 9 6, 13 4 Q 13.5 10.5, 12 17 C 8 19, 4 16, 1 18 Q 1.5 11.5, 2 5" />
+      <path d="M 3.5 8 Q 6 7, 9 8" strokeWidth="0.8" />
+      <path d="M 3 11 Q 5 10, 8.5 11" strokeWidth="0.8" />
+      <path d="M 2.5 14 Q 5 13, 7 14" strokeWidth="0.8" />
+      <path d="M 22 2 C 15 2.5, 13 8, 14 15 Q 15 16, 16 15.5 C 19 14.5, 21.5 9, 22 2 Z" strokeWidth="1" />
+      <path d="M 22 2 C 17 7, 15.5 12, 15 15.5" strokeWidth="0.8" />
+      <path d="M 16.94 9.03 Q 16.1 8.4, 15.5 7.6" strokeWidth="0.8" />
+      <path d="M 15.44 13.23 Q 17.7 12.2, 19.5 10.6" strokeWidth="0.8" />
+      <path d="M 14.2 15.2 L 13.3 17.8 L 12 21.5 L 14.5 19 L 15.8 15.5" />
+      <path d="M 13.8 17.8 L 12 21.5" strokeWidth="0.8" />
+    </svg>
+  );
+}
+
 export function hasChatScenario(chapterId) {
   return Object.hasOwn(scenarios, chapterId);
 }
 
-function StatIcons() {
-  return statTypes.map(({ icon, name }) => <span className="chat-stat-icon" key={name}>{icon}</span>);
+function ChatStatus({ scenario, showDashboard, onToggleDashboard }) {
+  const [selected, setSelected] = useState('신뢰도');
+  const statuses = [
+    { icon: <CredibilityMedalIcon />, name: '신뢰도', value: scenario.trust, description: scenario.trustCaption },
+    ...statTypes.map((type, index) => ({ ...type, ...scenario.stats[index] })),
+  ];
+  const { name: activeName, value, description } = statuses.find(({ name }) => name === selected);
+
+  return (
+    <div className="chat-status" role="group" aria-label="현재 상태">
+      <div
+        className="chat-trust"
+        role="meter"
+        aria-label={activeName}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={value}
+        aria-valuetext={`${value}, ${description}`}
+      >
+        <span className="chat-trust-fill" style={{ width: `${value}%` }} />
+        <span className="chat-trust-score">{activeName} {value}</span>
+        <span className="chat-trust-caption">{description}</span>
+      </div>
+      {statuses.map(({ icon, name }) => (
+        <button
+          key={name}
+          className="chat-stat-icon chat-status-icon"
+          type="button"
+          aria-label={name}
+          aria-pressed={selected === name}
+          title={name}
+          onClick={() => setSelected(name)}
+        >
+          <span aria-hidden="true">{icon}</span>
+        </button>
+      ))}
+      <button
+        className="chat-stat-icon chat-status-icon chat-mobile-stats"
+        type="button"
+        aria-label="광기판독기 및 능력치"
+        aria-controls="chat-dashboard"
+        aria-expanded={showDashboard}
+        onClick={onToggleDashboard}
+      >
+        <ReportIcon />
+      </button>
+    </div>
+  );
 }
 
 function PixelPortrait() {
@@ -182,7 +347,6 @@ function ChatDashboard({ open, scenario }) {
 
 export function ChapterChat({ chapter }) {
   const scenario = scenarios[chapter.id];
-  const { trust, trustCaption } = scenario;
   const [draft, setDraft] = useState('');
   const [actions, setActions] = useState([]);
   const [showDashboard, setShowDashboard] = useState(false);
@@ -248,32 +412,11 @@ export function ChapterChat({ chapter }) {
               <span aria-hidden="true">⚙</span>
             </button>
           </div>
-          <div className="chat-status">
-            <div
-              className="chat-trust"
-              role="meter"
-              aria-label="신뢰도"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={trust}
-              aria-valuetext={`신뢰도 ${trust}, ${trustCaption}`}
-            >
-              <span className="chat-trust-fill" style={{ width: `${trust}%` }} />
-              <span className="chat-trust-score">신뢰도 {trust}</span>
-              <span className="chat-trust-caption">{trustCaption}</span>
-            </div>
-            <div className="chat-stat-icons" aria-hidden="true"><StatIcons /></div>
-            <button
-              className="chat-mobile-stats"
-              type="button"
-              aria-label="광기판독기 및 능력치"
-              aria-controls="chat-dashboard"
-              aria-expanded={showDashboard}
-              onClick={() => setShowDashboard((previous) => !previous)}
-            >
-              <span aria-hidden="true"><StatIcons /></span>
-            </button>
-          </div>
+          <ChatStatus
+            scenario={scenario}
+            showDashboard={showDashboard}
+            onToggleDashboard={() => setShowDashboard((previous) => !previous)}
+          />
         </header>
 
         <div ref={logRef} className="chat-log" role="log" aria-label="챕터 대화" tabIndex="0">

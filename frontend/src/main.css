@@ -1,4 +1,5 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
+@import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -14,7 +15,7 @@
 
 @font-face {
   font-family: 'Kyobo Handwriting 2020';
-  src: local('KyoboHandwriting2020pdy'), local('Kyobo Handwriting 2020 pdy'), local('교보 손글씨 2020 박도연');
+  src: url('https://contents.kyobobook.co.kr/display/next/ui-store/build-1795481024/_next/static/media/3faf6cb2613da50d-s.p.ttf') format('truetype');
   font-style: normal;
   font-weight: 400;
   font-display: swap;
@@ -636,7 +637,7 @@
 .chat-status {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 4px;
   min-height: 35px;
   padding: 5px 10px;
 }
@@ -645,6 +646,7 @@
   position: relative;
   display: flex;
   flex: 1;
+  min-width: 0;
   align-items: center;
   justify-content: space-between;
   min-height: 22px;
@@ -678,13 +680,20 @@
 }
 
 .chat-trust-score {
+  flex-shrink: 0;
+  padding-inline: 3px;
+  background: #9d291c;
   color: #fff9ea;
 }
 
-.chat-stat-icons,
-.chat-mobile-stats > span {
-  display: flex;
-  gap: 4px;
+.chat-trust-caption {
+  min-width: 0;
+  margin-left: 4px;
+  overflow: hidden;
+  padding-inline: 2px;
+  background: var(--chat-light-paper);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chat-stat-icon {
@@ -697,11 +706,22 @@
   font: 400 16px/1 system-ui, sans-serif;
 }
 
-.chat-stat-icons .chat-stat-icon,
-.chat-mobile-stats .chat-stat-icon {
+.chat-status-icon {
+  flex-shrink: 0;
   width: 22px;
   height: 22px;
   font-size: 14px;
+}
+
+.chat-status-icon[aria-pressed="true"] {
+  border-color: var(--archive-red);
+  color: var(--archive-red);
+}
+
+.chat-status-art {
+  display: block;
+  width: 16px;
+  height: 16px;
 }
 
 .chat-mobile-stats {
@@ -1275,14 +1295,12 @@
     min-height: 44px;
   }
 
-  .chat-stat-icons,
   .chat-help {
     display: none;
   }
 
   .chat-mobile-stats {
-    display: block;
-    min-height: 35px;
+    display: grid;
   }
 
   .chat-log {
