@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useReducer, useRef, useState, useSyncExternalStore } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useAnimationControls } from 'framer-motion';
 
 function InfluenceIcon() {
   return (
@@ -119,6 +119,9 @@ type Scenario = {
   trust: number;
   trustCaption: string;
   reaction: string;
+  interruptReaction: string;
+  interruptReactionsBySpeaker?: Partial<Record<string, string>>;
+  speaker?: string;
   classification: string;
   stats: [ScenarioStat, ScenarioStat, ScenarioStat];
   records: { kind: string; name: string; description: string }[];
@@ -142,6 +145,9 @@ const scenarios: Record<string, Scenario | undefined> = {
     trust: 38,
     trustCaption: '미치광이 취급',
     reaction: '저 사람, 빵이랑 대화하는 것 같은데?',
+    interruptReaction: '저 사람, 남의 말은 듣지도 않고 혼자 떠드네.',
+    speaker: '자크',
+    interruptReactionsBySpeaker: { 자크: '왜 자꾸 말을 끊어? 내 말 아직 안 끝났어.' },
     classification: '위험한 혁명 선동가',
     stats: [
       { description: '극단적 혁명파', value: 82 },
@@ -163,6 +169,7 @@ const scenarios: Record<string, Scenario | undefined> = {
     trust: 58,
     trustCaption: '의심받는 중',
     reaction: '저 문서를 어쩌다 손에 넣은 거지?',
+    interruptReaction: '아직 말이 끝나지 않았소. 어찌 자꾸 말을 자르시오?',
     classification: '수상한 문서 전달자',
     stats: [
       { description: '새 제국에 관심 있음', value: 52 },
@@ -181,6 +188,7 @@ const scenarios: Record<string, Scenario | undefined> = {
     trust: 61,
     trustCaption: '신원 확인 중',
     reaction: '그 레몬은 초대장이었나?',
+    interruptReaction: '혼자 갑자기 떠들기 시작했어. 저 사람, 취한 거 아냐?',
     classification: '신원 불명의 손님',
     stats: [
       { description: '금주법을 눈치 보는 중', value: 33 },
@@ -225,21 +233,35 @@ type StatName = '신뢰도' | (typeof statTypes)[number]['name'];
 
 type ChatStatusProps = {
   scenario: Scenario;
+  trust: number;
+  penaltyCount: number;
+  reduceMotion: boolean;
   showDashboard: boolean;
   onToggleDashboard: () => void;
 };
 
-function ChatStatus({ scenario, showDashboard, onToggleDashboard }: ChatStatusProps) {
-  const [selected, setSelected] = useState<StatName>('신뢰도');
-  const trustStatus = { icon: <CredibilityMedalIcon />, name: '신뢰도', value: scenario.trust, description: scenario.trustCaption } as const;
+function ChatStatus({ scenario, trust, penaltyCount, reduceMotion, showDashboard, onToggleDashboard }: ChatStatusProps) {
+  const [selection, setSelection] = useState<{ name: StatName; penaltyCount: number }>({ name: '신뢰도', penaltyCount: 0 });
+  const selected = selection.penaltyCount === penaltyCount ? selection.name : '신뢰도';
+  const shake = useAnimationControls();
+  const trustStatus = { icon: <CredibilityMedalIcon />, name: '신뢰도', value: trust, description: scenario.trustCaption } as const;
   const statuses = [
     trustStatus,
     ...statTypes.map(({ index, ...type }) => ({ ...type, ...scenario.stats[index] })),
   ];
   const { name: activeName, value, description } = statuses.find(({ name }) => name === selected) ?? trustStatus;
 
+  useEffect(() => {
+    if (!penaltyCount || reduceMotion) {
+      shake.set({ x: 0 });
+      return;
+    }
+    void shake.start({ x: [0, -14, 14, -11, 10, -6, 4, 0], transition: { duration: 0.48, ease: 'linear' } });
+    return () => shake.stop();
+  }, [penaltyCount, reduceMotion, shake]);
+
   return (
-    <div className="chat-status" role="group" aria-label="현재 상태">
+    <motion.div className="chat-status" role="group" aria-label="현재 상태" animate={shake}>
       <div
         className="chat-trust"
         role="meter"
@@ -261,7 +283,7 @@ function ChatStatus({ scenario, showDashboard, onToggleDashboard }: ChatStatusPr
           aria-label={name}
           aria-pressed={selected === name}
           title={name}
-          onClick={() => setSelected(name)}
+          onClick={() => setSelection({ name, penaltyCount })}
         >
           <span aria-hidden="true">{icon}</span>
         </button>
@@ -276,7 +298,7 @@ function ChatStatus({ scenario, showDashboard, onToggleDashboard }: ChatStatusPr
       >
         <ReportIcon />
       </button>
-    </div>
+    </motion.div>
   );
 }
 
@@ -386,20 +408,25 @@ type ChapterChatProps = {
 type ChatEntry =
   | { kind: 'opening'; setting: string; text: string }
   | { kind: 'history' | 'question' | 'narrative'; text: string }
-  | { kind: 'player'; text: string };
+  | { kind: 'player'; text: string; interrupted?: boolean }
+  | { kind: 'interrupt'; text: string; trust: number };
 
-type ChatReveal = { pending: ChatEntry[]; interval: number };
+type ChatReveal = { pending: ChatEntry[]; interval: number; speaker?: string };
 type Conversation = {
   log: ChatEntry[];
   reveal: ChatReveal | null;
+  trust: number;
+  interruptCount: number;
   turnCount: number;
 };
 type ConversationEvent =
   | { kind: 'advance'; reveal: ChatReveal; finishImmediately: boolean }
-  | { kind: 'submit'; text: string };
+  | { kind: 'submit'; text: string; scenario: Scenario };
 
 const revealDuration = 2400;
 const revealMotionDuration = 320;
+const freeInterrupts = 5;
+const interruptPenalty = 10;
 const reducedMotionQuery = '(prefers-reduced-motion: reduce)';
 const getReducedMotion = () => window.matchMedia(reducedMotionQuery).matches;
 
@@ -410,9 +437,13 @@ function subscribeToReducedMotion(onChange: () => void) {
 }
 
 const easeOutExpo = (t: number) => t === 1 ? 1 : 1 - 2 ** (-10 * t);
+const easeOutElastic = (t: number) => {
+  if (t === 0 || t === 1) return t;
+  return 2 ** (-10 * t) * Math.sin((t * 10 - 0.75) * 2 * Math.PI / 3) + 1;
+};
 
 function startConversation(scenario: Scenario | undefined): Conversation {
-  if (!scenario) return { log: [], reveal: null, turnCount: 0 };
+  if (!scenario) return { log: [], reveal: null, trust: 0, interruptCount: 0, turnCount: 0 };
 
   const pending: ChatEntry[] = [];
   if (scenario.pastAction) pending.push({ kind: 'player', text: scenario.pastAction });
@@ -422,7 +453,9 @@ function startConversation(scenario: Scenario | undefined): Conversation {
 
   return {
     log: [{ kind: 'opening', setting: scenario.setting, text: scenario.opening }],
-    reveal: { pending, interval: (revealDuration - revealMotionDuration) / pending.length },
+    reveal: { pending, interval: (revealDuration - revealMotionDuration) / pending.length, speaker: scenario.speaker },
+    trust: scenario.trust,
+    interruptCount: 0,
     turnCount: 0,
   };
 }
@@ -440,13 +473,22 @@ function updateConversation(state: Conversation, event: ConversationEvent): Conv
     };
   }
 
-  const log: ChatEntry[] = [
-    ...state.log,
-    ...(state.reveal?.pending ?? []),
-    { kind: 'player', text: event.text },
-  ];
+  const interrupted = state.reveal !== null;
+  const interruptCount = state.interruptCount + Number(interrupted);
+  const penalized = interrupted && interruptCount > freeInterrupts;
+  const trust = penalized ? Math.max(0, state.trust - interruptPenalty) : state.trust;
+  const log = [...state.log];
+  if (penalized) {
+    const speaker = state.reveal?.speaker;
+    const speakerReaction = speaker ? event.scenario.interruptReactionsBySpeaker?.[speaker] : undefined;
+    log.push({ kind: 'interrupt', text: speakerReaction ?? event.scenario.interruptReaction, trust });
+  }
+  log.push({ kind: 'player', text: event.text, interrupted });
+
   // Local replies stand in for the future chat API.
-  const reply = ['상대가 당신의 말을 듣고 잠시 생각에 잠깁니다.', '이윽고 상대가 다시 당신을 바라봅니다.'];
+  const reply = interrupted
+    ? ['당신의 외침에 상대가 말을 멈춥니다.', '잠시 정적이 흐르고 상대는 당신을 바라봅니다.']
+    : ['상대가 당신의 말을 듣고 잠시 생각에 잠깁니다.', '이윽고 상대가 다시 당신을 바라봅니다.'];
   return {
     log,
     reveal: {
@@ -455,7 +497,10 @@ function updateConversation(state: Conversation, event: ConversationEvent): Conv
         { kind: 'question', text: '이제 어떻게 하시겠습니까?' },
       ],
       interval: (revealDuration - revealMotionDuration) / (reply.length + 1),
+      speaker: event.scenario.speaker,
     },
+    trust,
+    interruptCount,
     turnCount: state.turnCount + 1,
   };
 }
@@ -483,6 +528,18 @@ function ChatLogEntry({ entry, reduceMotion }: { entry: ChatEntry; reduceMotion:
       return <motion.p className="chat-narrative" {...rise}>{entry.text}</motion.p>;
     case 'player':
       return <p className="chat-player-message">{entry.text}</p>;
+    case 'interrupt':
+      return (
+        <motion.p
+          className="chat-interrupt-stamp"
+          initial={reduceMotion ? false : { scale: 1.65, y: -18, rotate: -9 }}
+          animate={{ scale: 1, y: 0, rotate: reduceMotion ? 0 : -2 }}
+          transition={{ duration: reduceMotion ? 0 : 0.56, ease: easeOutElastic }}
+        >
+          {entry.text}
+          <span className="sr-only"> 현재 신뢰도 {entry.trust}</span>
+        </motion.p>
+      );
   }
 }
 
@@ -490,7 +547,7 @@ export function ChapterChat({ chapter }: ChapterChatProps) {
   const scenario = hasChatScenario(chapter.id) ? scenarios[chapter.id] : undefined;
   const [draft, setDraft] = useState('');
   const [conversation, dispatch] = useReducer(updateConversation, scenario, startConversation);
-  const { reveal, log, turnCount } = conversation;
+  const { reveal, log, trust, interruptCount, turnCount } = conversation;
   const isAnimating = reveal !== null;
   const reduceMotion = useSyncExternalStore(subscribeToReducedMotion, getReducedMotion);
   const [showDashboard, setShowDashboard] = useState(false);
@@ -532,7 +589,7 @@ export function ChapterChat({ chapter }: ChapterChatProps) {
       advance();
       return;
     }
-    // Keep the same total wait without leaving a waiting period after the last line is visible.
+    // Keep the same total wait without leaving a penalty window after the last line is visible.
     const delay = remaining
       ? reveal.interval + (reduceMotion && remaining === 1 ? revealMotionDuration : 0)
       : revealMotionDuration;
@@ -597,7 +654,7 @@ export function ChapterChat({ chapter }: ChapterChatProps) {
     const action = draft.trim();
     if (!action || !scenario) return;
     followLog.current = true;
-    dispatch({ kind: 'submit', text: action });
+    dispatch({ kind: 'submit', text: action, scenario });
     setDraft('');
     textareaRef.current?.focus();
   }
@@ -627,6 +684,9 @@ export function ChapterChat({ chapter }: ChapterChatProps) {
           </div>
           <ChatStatus
             scenario={scenario}
+            trust={trust}
+            penaltyCount={Math.max(0, interruptCount - freeInterrupts)}
+            reduceMotion={reduceMotion}
             showDashboard={showDashboard}
             onToggleDashboard={() => setShowDashboard((previous) => !previous)}
           />
@@ -692,7 +752,7 @@ export function ChapterChat({ chapter }: ChapterChatProps) {
               placeholder="당신의 행동을 입력하세요..."
               aria-describedby="chat-composer-note"
             />
-            <button className="chat-submit" type="submit" disabled={!draft.trim()}>
+            <button className="chat-submit" type="submit">
               <span aria-hidden="true">➤</span> 실행
             </button>
           </div>
