@@ -1,6 +1,6 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'framer-motion';
-import { ChapterChat, hasChatScenario } from './ChapterChat.jsx';
+import { ChapterChat, hasChatScenario } from './ChapterChat.tsx';
 
 type ChapterStatus = 'in-progress' | 'available' | 'locked';
 
@@ -292,7 +292,7 @@ export function ChapterArchive({ archive }: ChapterArchiveProps) {
               <span className="archive-label">what if...</span>
               <span>열람자 [닉네임]</span>
             </div>
-            <h1 id="archive-heading" ref={headingRef} tabIndex="-1">어느 역사를 경험해보시겠습니까?</h1>
+            <h1 id="archive-heading" ref={headingRef} tabIndex={-1}>어느 역사를 경험해보시겠습니까?</h1>
             <p className="archive-lede">마음이 가는 이야기를 골라보세요.</p>
           </section>
 
@@ -340,7 +340,7 @@ export function ChapterArchive({ archive }: ChapterArchiveProps) {
                         closeChapter();
                       }
                       if (event.key === 'Tab') {
-                        const buttons = event.currentTarget.querySelectorAll('button:not([disabled])');
+                        const buttons = event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not([disabled])');
                         const first = buttons[0];
                         const last = buttons[buttons.length - 1];
                         if (event.shiftKey && document.activeElement === first) {

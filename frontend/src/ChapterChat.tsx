@@ -94,12 +94,36 @@ function MethodIcon() {
 }
 
 const statTypes = [
-  { icon: <IdeologyIcon />, name: '사상' },
-  { icon: <MethodIcon />, name: '수단' },
-  { icon: <InfluenceIcon />, name: '영향력' },
-];
+  { icon: <IdeologyIcon />, name: '사상', index: 0 },
+  { icon: <MethodIcon />, name: '수단', index: 1 },
+  { icon: <InfluenceIcon />, name: '영향력', index: 2 },
+] as const;
 
-const scenarios = {
+type ScenarioStat = {
+  description: string;
+  value: number;
+};
+
+type Scenario = {
+  part?: number;
+  day: string;
+  report: string;
+  setting: string;
+  opening: string;
+  pastAction?: string;
+  response?: string[];
+  consequence?: string;
+  question: string;
+  suggestions: string[];
+  trust: number;
+  trustCaption: string;
+  reaction: string;
+  classification: string;
+  stats: [ScenarioStat, ScenarioStat, ScenarioStat];
+  records: { kind: string; name: string; description: string }[];
+};
+
+const scenarios: Record<string, Scenario | undefined> = {
   'french-revolution': {
     part: 2,
     day: '혁명력 1일차',
@@ -192,17 +216,26 @@ function ReportIcon() {
   );
 }
 
-export function hasChatScenario(chapterId) {
+export function hasChatScenario(chapterId: string) {
   return Object.hasOwn(scenarios, chapterId);
 }
 
-function ChatStatus({ scenario, showDashboard, onToggleDashboard }) {
-  const [selected, setSelected] = useState('신뢰도');
+type StatName = '신뢰도' | (typeof statTypes)[number]['name'];
+
+type ChatStatusProps = {
+  scenario: Scenario;
+  showDashboard: boolean;
+  onToggleDashboard: () => void;
+};
+
+function ChatStatus({ scenario, showDashboard, onToggleDashboard }: ChatStatusProps) {
+  const [selected, setSelected] = useState<StatName>('신뢰도');
+  const trustStatus = { icon: <CredibilityMedalIcon />, name: '신뢰도', value: scenario.trust, description: scenario.trustCaption } as const;
   const statuses = [
-    { icon: <CredibilityMedalIcon />, name: '신뢰도', value: scenario.trust, description: scenario.trustCaption },
-    ...statTypes.map((type, index) => ({ ...type, ...scenario.stats[index] })),
+    trustStatus,
+    ...statTypes.map(({ index, ...type }) => ({ ...type, ...scenario.stats[index] })),
   ];
-  const { name: activeName, value, description } = statuses.find(({ name }) => name === selected);
+  const { name: activeName, value, description } = statuses.find(({ name }) => name === selected) ?? trustStatus;
 
   return (
     <div className="chat-status" role="group" aria-label="현재 상태">
@@ -266,7 +299,7 @@ function PixelPortrait() {
   );
 }
 
-function ChatDashboard({ open, scenario }) {
+function ChatDashboard({ open, scenario }: { open: boolean; scenario: Scenario }) {
   const { report, reaction, classification, stats, records } = scenario;
   return (
     <aside
@@ -302,7 +335,7 @@ function ChatDashboard({ open, scenario }) {
           <h3 id="chat-stats-heading">3대 지표</h3>
         </header>
         <ul className="chat-stats">
-          {statTypes.map(({ icon, name }, index) => {
+          {statTypes.map(({ icon, name, index }) => {
             const { description, value } = stats[index];
             return (
               <li key={name}>
@@ -313,7 +346,7 @@ function ChatDashboard({ open, scenario }) {
                     <span>{description}</span>
                     <b>{value}</b>
                   </div>
-                  <meter className="chat-stat-track" min="0" max="100" value={value} aria-label={name} />
+                  <meter className="chat-stat-track" min={0} max={100} value={value} aria-label={name} />
                 </div>
               </li>
             );
@@ -345,59 +378,67 @@ function ChatDashboard({ open, scenario }) {
   );
 }
 
-export function ChapterChat({ chapter }) {
-  const scenario = scenarios[chapter.id];
+type ChapterChatProps = {
+  chapter: { id: string; number: number; title: string };
+};
+
+export function ChapterChat({ chapter }: ChapterChatProps) {
+  const scenario = hasChatScenario(chapter.id) ? scenarios[chapter.id] : undefined;
   const [draft, setDraft] = useState('');
-  const [actions, setActions] = useState([]);
+  const [actions, setActions] = useState<string[]>([]);
   const [showDashboard, setShowDashboard] = useState(false);
-  const [dialog, setDialog] = useState('');
-  const headingRef = useRef(null);
-  const logRef = useRef(null);
-  const textareaRef = useRef(null);
-  const dialogRef = useRef(null);
+  const [dialog, setDialog] = useState<'' | 'settings' | 'help'>('');
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const logRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     headingRef.current?.focus();
   }, []);
 
   useEffect(() => {
-    if (actions.length) {
-      const log = logRef.current;
+    const log = logRef.current;
+    if (actions.length && log) {
       log.scrollTop = log.scrollHeight;
     }
   }, [actions]);
 
   useEffect(() => {
-    if (dialog && !dialogRef.current.open) {
-      dialogRef.current.showModal();
+    const element = dialogRef.current;
+    if (dialog && element && !element.open) {
+      element.showModal();
     }
   }, [dialog]);
 
-  function chooseSuggestion(text) {
+  function chooseSuggestion(text: string) {
     setDraft(text);
     const textarea = textareaRef.current;
+    if (!textarea) return;
     textarea.focus();
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       textarea.animate([{ backgroundColor: '#efc9ab' }, { backgroundColor: 'transparent' }], 260);
     }
   }
 
-  function submitAction(event) {
+  function submitAction(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const action = draft.trim();
     if (!action) return;
     setActions((previous) => [...previous, action]);
     setDraft('');
-    textareaRef.current.focus();
+    textareaRef.current?.focus();
   }
 
-  function handleComposerKey(event) {
+  function handleComposerKey(event: React.KeyboardEvent<HTMLTextAreaElement>) {
     const { isComposing, keyCode } = event.nativeEvent;
     if (event.key === 'Enter' && !event.shiftKey && !isComposing && keyCode !== 229) {
       event.preventDefault();
-      event.currentTarget.form.requestSubmit();
+      event.currentTarget.form?.requestSubmit();
     }
   }
+
+  if (!scenario) return null;
 
   return (
     <main className="chapter-chat">
@@ -407,7 +448,7 @@ export function ChapterChat({ chapter }) {
             <a className="chat-icon-button" href="#chapters" aria-label="목차로 돌아가기">
               <span aria-hidden="true">☰</span>
             </a>
-            <h1 id="chat-heading" ref={headingRef} tabIndex="-1"><span>제{scenario.part ?? chapter.number}장</span> {chapter.title}</h1>
+            <h1 id="chat-heading" ref={headingRef} tabIndex={-1}><span>제{scenario.part ?? chapter.number}장</span> {chapter.title}</h1>
             <button className="chat-icon-button" type="button" onClick={() => setDialog('settings')} aria-label="설정">
               <span aria-hidden="true">⚙</span>
             </button>
@@ -419,7 +460,7 @@ export function ChapterChat({ chapter }) {
           />
         </header>
 
-        <div ref={logRef} className="chat-log" role="log" aria-label="챕터 대화" tabIndex="0">
+        <div ref={logRef} className="chat-log" role="log" aria-label="챕터 대화" tabIndex={0}>
           <div className="chat-date-marker">{scenario.day}</div>
           <article className="chat-narrative">
             <h2>{scenario.setting}</h2>
@@ -459,7 +500,7 @@ export function ChapterChat({ chapter }) {
             <textarea
               id="chat-action"
               ref={textareaRef}
-              rows="1"
+              rows={1}
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={handleComposerKey}
