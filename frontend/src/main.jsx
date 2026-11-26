@@ -2,7 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { motion, useReducedMotion } from 'framer-motion';
 import { create } from 'zustand';
-import { ChapterArchive, mockArchive } from './ChapterArchive.jsx';
+import { ChapterArchive, mockArchive } from './ChapterArchive.tsx';
 import './main.css';
 
 const useConnection = create((set) => ({
