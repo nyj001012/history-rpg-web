@@ -543,10 +543,21 @@
   max-height: calc(100dvh - 48px);
   overflow-y: auto;
   padding: clamp(20px, 4vw, 34px);
-  border: 1px solid #8d8268;
-  background: #e8e0cf;
-  box-shadow: 8px 10px 0 #11140f70;
+  color: #f3eddf;
   text-align: center;
+}
+
+.chapter-confirm-overlay,
+.chapter-confirm-modal {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.chapter-confirm-overlay::-webkit-scrollbar,
+.chapter-confirm-modal::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .chapter-confirm-photo {
@@ -565,7 +576,7 @@
 }
 
 .chapter-confirm-meta {
-  color: #625e55;
+  color: #d7cdb8;
   font-family: var(--font-ui);
   font-size: 0.75rem;
   letter-spacing: 0.04em;
@@ -586,10 +597,9 @@
   color: var(--archive-ink);
   font-family: var(--font-pixel);
   font-size: 0.9375rem;
-  transition: background-color 140ms ease, color 140ms ease;
+  transition: background-color 63ms ease, color 63ms ease;
 }
 
-.chapter-confirm-button:hover,
 .chapter-confirm-button:focus-visible {
   background: var(--archive-ink);
   color: #f3eddf;
@@ -600,7 +610,6 @@
   color: #f3eddf;
 }
 
-.chapter-confirm-button--primary:hover,
 .chapter-confirm-button--primary:focus-visible {
   background: #f3eddf;
   color: var(--archive-ink);

@@ -123,10 +123,22 @@ const statusLabels: Record<ChapterStatus, string> = {
 
 const formatNumber = (number: number): string => String(number).padStart(2, '0');
 
+const easeOutElastic = (progress: number): number => {
+  const curve = (2 * Math.PI) / 3;
+  if (progress === 0 || progress === 1) return progress;
+  return 2 ** (-10 * progress) * Math.sin((progress * 10 - 0.75) * curve) + 1;
+};
+
+const chapterImageVariants = {
+  rest: { x: 0, rotate: 0 },
+  hover: { x: 2, rotate: 1.2 },
+};
+
 function ChapterCard({ chapter, selected, onSelect, reduceMotion }: ChapterCardProps) {
+  const [isHovered, setIsHovered] = useState(false);
   const locked = chapter.status === 'locked' || !hasChatScenario(chapter.id);
   const Card = locked ? motion.button : motion.a;
-  const transition = { duration: reduceMotion ? 0.01 : 0.4, ease: 'easeInOut' };
+  const transition = { duration: reduceMotion ? 0.01 : 0.133, ease: 'easeInOut' };
   const handleClick = (event: ChapterCardClickEvent): void => {
     if (locked || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (!(event.currentTarget instanceof HTMLAnchorElement)) return;
@@ -142,8 +154,10 @@ function ChapterCard({ chapter, selected, onSelect, reduceMotion }: ChapterCardP
         disabled={locked || undefined}
         href={locked ? undefined : `#play/${chapter.id}`}
         onClick={handleClick}
-        whileHover={!locked && !reduceMotion ? { scale: 1.05, zIndex: 2 } : undefined}
-        transition={transition}
+        onHoverStart={() => {
+          if (!locked && !reduceMotion) setIsHovered(true);
+        }}
+        onHoverEnd={() => setIsHovered(false)}
         aria-haspopup={locked ? undefined : 'dialog'}
         aria-expanded={locked ? undefined : selected}
         aria-label={locked ? undefined : `${chapter.title} 상세 보기`}
@@ -154,12 +168,18 @@ function ChapterCard({ chapter, selected, onSelect, reduceMotion }: ChapterCardP
           animate={{ opacity: selected ? 0 : 1 }}
           transition={transition}
         >
-          <span className={`chapter-scene chapter-scene--${chapter.scene}`} aria-hidden="true">
+          <motion.span
+            className={`chapter-scene chapter-scene--${chapter.scene}`}
+            aria-hidden="true"
+            animate={isHovered ? 'hover' : 'rest'}
+            variants={chapterImageVariants}
+            transition={{ duration: 0.55, ease: easeOutElastic }}
+          >
             <span className="scene-landmark" />
             <span className="scene-figure scene-figure--left" />
             <span className="scene-figure scene-figure--middle" />
             <span className="scene-figure scene-figure--right" />
-          </span>
+          </motion.span>
           <span className="chapter-stamp">{statusLabels[chapter.status]}</span>
         </motion.span>
         <span className="chapter-caption">
@@ -189,7 +209,7 @@ export function ChapterArchive({ archive }: ChapterArchiveProps) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const wasPlaying = useRef(false);
   const reduceMotion = useReducedMotion();
-  const motionTransition = { duration: reduceMotion ? 0.01 : 0.4, ease: 'easeInOut' };
+  const motionTransition = { duration: reduceMotion ? 0.01 : 0.18, ease: 'easeInOut' };
   const openChapters = chapters.filter((chapter) => chapter.status !== 'locked');
   const resumeChapter = openChapters.find((chapter) => chapter.id === resumeChapterId);
   const activeChapter = openChapters.find((chapter) => hasChatScenario(chapter.id) && hash === `#play/${chapter.id}`);
@@ -310,9 +330,9 @@ export function ChapterArchive({ archive }: ChapterArchiveProps) {
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="chapter-confirm-title"
-                    initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+                    initial={reduceMotion ? false : { opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
+                    exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 40 }}
                     transition={motionTransition}
                     onKeyDown={(event: ModalKeyEvent) => {
                       if (event.key === 'Escape') {
