@@ -162,6 +162,7 @@
   width: 100%;
   height: 100%;
   text-align: left;
+  transform-origin: center;
 }
 
 .chapter-photo {
@@ -523,6 +524,105 @@
   padding: 6px 16px;
   border: 1px solid var(--archive-ink);
   font-size: 0.875rem;
+}
+
+.chapter-confirm-overlay {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 24px 16px;
+  background: #171914b8;
+  backdrop-filter: blur(2px);
+}
+
+.chapter-confirm-modal {
+  width: min(540px, 100%);
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  padding: clamp(20px, 4vw, 34px);
+  border: 1px solid #8d8268;
+  background: #e8e0cf;
+  box-shadow: 8px 10px 0 #11140f70;
+  text-align: center;
+}
+
+.chapter-confirm-photo {
+  width: min(100%, 430px);
+  margin-inline: auto;
+  padding: 14px 14px 40px;
+  box-shadow: 5px 8px 0 #22251938;
+}
+
+.chapter-confirm-title {
+  margin: 28px 0 8px;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.chapter-confirm-meta {
+  color: #625e55;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+.chapter-confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.chapter-confirm-button {
+  min-width: 100px;
+  padding: 9px 20px;
+  border: 2px solid var(--archive-ink);
+  background: #f3eddf;
+  color: var(--archive-ink);
+  font-family: var(--font-pixel);
+  font-size: 0.9375rem;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.chapter-confirm-button:hover,
+.chapter-confirm-button:focus-visible {
+  background: var(--archive-ink);
+  color: #f3eddf;
+}
+
+.chapter-confirm-button--primary {
+  background: var(--archive-ink);
+  color: #f3eddf;
+}
+
+.chapter-confirm-button--primary:hover,
+.chapter-confirm-button--primary:focus-visible {
+  background: #f3eddf;
+  color: var(--archive-ink);
+}
+
+@media (max-width: 560px) {
+  .chapter-confirm-overlay {
+    padding: 16px 12px;
+  }
+
+  .chapter-confirm-modal {
+    max-height: calc(100dvh - 32px);
+    padding: 18px 16px;
+  }
+
+  .chapter-confirm-photo {
+    padding: 10px 10px 30px;
+  }
+
+  .chapter-confirm-title {
+    margin-top: 20px;
+  }
 }
 
 @media (max-width: 1000px) {
