@@ -1468,14 +1468,18 @@
 }
 
 .ending-bookmark {
+  --bookmark-letter-spacing: 0.12em;
   z-index: 2;
-  padding: 14px 9px;
+  padding-block: 9px;
+  /* Balance the visible ends of the upright RIDIBatang glyphs. */
+  padding-inline: calc(14px - 0.8em) calc(14px + 0.8em);
   border: 1px solid #651f1c;
   border-right: 0;
   background-image: linear-gradient(95deg, #e6ac6820, transparent);
   box-shadow: -2px 3px 0 #663a3533, inset 0 0 0 2px #f4d39e1c;
   font: 400 0.85rem/1.15 var(--font-display);
-  letter-spacing: 0.12em;
+  letter-spacing: var(--bookmark-letter-spacing);
+  text-indent: var(--bookmark-letter-spacing);
   writing-mode: vertical-rl;
   text-orientation: upright;
 }
@@ -1867,11 +1871,12 @@
 
 @media (max-width: 560px) {
   .ending-bookmark {
+    --bookmark-letter-spacing: 0.04em;
     position: absolute;
     top: 72px;
     padding: 5px 10px;
     font-size: 0.74rem;
-    letter-spacing: 0.04em;
+    border-right: 1px solid transparent;
     writing-mode: horizontal-tb;
   }
 }
