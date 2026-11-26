@@ -1,6 +1,7 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'framer-motion';
 import { ChapterChat, hasChatScenario } from './ChapterChat.tsx';
+import { EndingArchiveLayout, endingArchiveHref, useGameMotionScale } from './EndingArchive.tsx';
 
 type ChapterStatus = 'in-progress' | 'available' | 'locked';
 
@@ -207,12 +208,14 @@ export function ChapterArchive({ archive }: ChapterArchiveProps) {
   const selectedCardRef = useRef<HTMLAnchorElement | null>(null);
   const previousSelection = useRef(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
-  const wasPlaying = useRef(false);
+  const wasAwayFromLobby = useRef(false);
   const reduceMotion = useReducedMotion();
-  const motionTransition = { duration: reduceMotion ? 0.01 : 0.18, ease: 'easeInOut' };
+  const motionScale = useGameMotionScale();
+  const motionTransition = { duration: reduceMotion ? 0.01 : 0.18 * motionScale, ease: 'easeInOut' };
   const openChapters = chapters.filter((chapter) => chapter.status !== 'locked');
   const resumeChapter = openChapters.find((chapter) => chapter.id === resumeChapterId);
   const activeChapter = openChapters.find((chapter) => hasChatScenario(chapter.id) && hash === `#play/${chapter.id}`);
+  const isEndingArchive = hash === endingArchiveHref;
 
   useLayoutEffect(() => {
     function updateHash() {
@@ -256,14 +259,24 @@ export function ChapterArchive({ archive }: ChapterArchiveProps) {
   };
 
   useLayoutEffect(() => {
-    if (!activeChapter && wasPlaying.current) headingRef.current?.focus();
-    wasPlaying.current = Boolean(activeChapter);
-  }, [activeChapter]);
+    const isAwayFromLobby = Boolean(activeChapter) || isEndingArchive;
+    if (!isAwayFromLobby && wasAwayFromLobby.current) headingRef.current?.focus();
+    wasAwayFromLobby.current = isAwayFromLobby;
+  }, [activeChapter, isEndingArchive]);
 
   if (activeChapter) return <ChapterChat key={activeChapter.id} chapter={activeChapter} />;
+  if (isEndingArchive) return <EndingArchiveLayout chapters={chapters} />;
 
   return (
     <div className="chapter-archive">
+      <motion.a
+        className="ending-bookmark fixed right-0 top-24 rounded-l-lg bg-red-900 text-amber-50"
+        href={endingArchiveHref}
+        whileHover={reduceMotion ? undefined : { x: -5 }}
+        transition={{ duration: 0.18 * motionScale, ease: 'easeOut' }}
+      >
+        엔딩 기록실
+      </motion.a>
       <div className="archive-sheet">
         <header className="archive-header">
           <div>

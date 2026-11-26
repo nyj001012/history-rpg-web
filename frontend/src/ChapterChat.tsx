@@ -1,5 +1,6 @@
 import React, { useEffect, useLayoutEffect, useReducer, useRef, useState, useSyncExternalStore } from 'react';
 import { motion, useAnimationControls } from 'framer-motion';
+import { GameHeader, ReportIcon, useGameTextSize } from './EndingArchive.tsx';
 
 function InfluenceIcon() {
   return (
@@ -198,32 +199,6 @@ const scenarios: Record<string, Scenario | undefined> = {
     records: [],
   },
 };
-
-function ReportIcon() {
-  return (
-    <svg
-      className="chat-status-art"
-      viewBox="-0.75 -0.9 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M 2 5 C 5 3, 9 6, 13 4 Q 13.5 10.5, 12 17 C 8 19, 4 16, 1 18 Q 1.5 11.5, 2 5" />
-      <path d="M 3.5 8 Q 6 7, 9 8" strokeWidth="0.8" />
-      <path d="M 3 11 Q 5 10, 8.5 11" strokeWidth="0.8" />
-      <path d="M 2.5 14 Q 5 13, 7 14" strokeWidth="0.8" />
-      <path d="M 22 2 C 15 2.5, 13 8, 14 15 Q 15 16, 16 15.5 C 19 14.5, 21.5 9, 22 2 Z" strokeWidth="1" />
-      <path d="M 22 2 C 17 7, 15.5 12, 15 15.5" strokeWidth="0.8" />
-      <path d="M 16.94 9.03 Q 16.1 8.4, 15.5 7.6" strokeWidth="0.8" />
-      <path d="M 15.44 13.23 Q 17.7 12.2, 19.5 10.6" strokeWidth="0.8" />
-      <path d="M 14.2 15.2 L 13.3 17.8 L 12 21.5 L 14.5 19 L 15.8 15.5" />
-      <path d="M 13.8 17.8 L 12 21.5" strokeWidth="0.8" />
-    </svg>
-  );
-}
 
 export function hasChatScenario(chapterId: string) {
   return Object.hasOwn(scenarios, chapterId);
@@ -551,7 +526,8 @@ export function ChapterChat({ chapter }: ChapterChatProps) {
   const isAnimating = reveal !== null;
   const reduceMotion = useSyncExternalStore(subscribeToReducedMotion, getReducedMotion);
   const [showDashboard, setShowDashboard] = useState(false);
-  const [dialog, setDialog] = useState<'' | 'settings' | 'help'>('');
+  const textSize = useGameTextSize();
+  const [dialog, setDialog] = useState<'' | 'help'>('');
   const headingRef = useRef<HTMLHeadingElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -670,18 +646,15 @@ export function ChapterChat({ chapter }: ChapterChatProps) {
   if (!scenario) return null;
 
   return (
-    <main className="chapter-chat">
+    <main className="chapter-chat" data-game-text-size={textSize}>
       <section className="chat-play" aria-labelledby="chat-heading">
-        <header className="chat-header">
-          <div className="chat-heading-row">
-            <a className="chat-icon-button" href="#chapters" aria-label="목차로 돌아가기">
-              <span aria-hidden="true">☰</span>
-            </a>
-            <h1 id="chat-heading" ref={headingRef} tabIndex={-1}><span>제{scenario.part ?? chapter.number}장</span> {chapter.title}</h1>
-            <button className="chat-icon-button" type="button" onClick={() => setDialog('settings')} aria-label="설정">
-              <span aria-hidden="true">⚙</span>
-            </button>
-          </div>
+        <div className="chat-header">
+          <GameHeader
+            title={<><span>제{scenario.part ?? chapter.number}장</span> {chapter.title}</>}
+            headingId="chat-heading"
+            headingRef={headingRef}
+            activePage="chat"
+          />
           <ChatStatus
             scenario={scenario}
             trust={trust}
@@ -690,7 +663,7 @@ export function ChapterChat({ chapter }: ChapterChatProps) {
             showDashboard={showDashboard}
             onToggleDashboard={() => setShowDashboard((previous) => !previous)}
           />
-        </header>
+        </div>
 
         <div
           ref={logRef}
@@ -762,10 +735,8 @@ export function ChapterChat({ chapter }: ChapterChatProps) {
       <ChatDashboard open={showDashboard} scenario={scenario} />
       <button className="chat-help" type="button" aria-label="도움말" onClick={() => setDialog('help')}>?</button>
       <dialog ref={dialogRef} className="chat-dialog" aria-labelledby="chat-dialog-heading" onClose={() => setDialog('')}>
-        <h2 id="chat-dialog-heading">{dialog === 'settings' ? '설정' : '도움말'}</h2>
-        {dialog === 'settings'
-          ? <a href="/connection">서버 연결 확인</a>
-          : <p>예시 행동을 누르면 입력창에 담깁니다. 문장을 고친 뒤 실행을 누를 수 있습니다.</p>}
+        <h2 id="chat-dialog-heading">도움말</h2>
+        <p>예시 행동을 누르면 입력창에 담깁니다. 문장을 고친 뒤 실행을 누를 수 있습니다.</p>
         <form method="dialog"><button type="submit">닫기</button></form>
       </dialog>
     </main>
