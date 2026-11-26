@@ -841,10 +841,39 @@
   display: flex;
   flex-direction: column;
   gap: clamp(19px, 3.4vh, 32px);
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: contain;
   min-width: 0;
   padding: 27px clamp(20px, 3.6vw, 58px) 36px;
+}
+
+.chat-log::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-log::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-log::-webkit-scrollbar-thumb {
+  background-color: rgb(87 83 78 / 40%);
+  border-radius: 10px;
+}
+
+.chat-log::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(87 83 78 / 70%);
+}
+
+.chat-log::-webkit-scrollbar-button {
+  display: none;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  .chat-log {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(87 83 78 / 40%) transparent;
+  }
 }
 
 .chat-log > * {
@@ -870,17 +899,12 @@
 }
 
 .chat-narrative,
-.chat-question,
-.chat-action-result {
+.chat-question {
   font-family: var(--font-display);
   font-size: clamp(0.94rem, 1.35vw, 1.14rem);
   line-height: 1.95;
   word-break: keep-all;
   overflow-wrap: anywhere;
-}
-
-.chat-action-result {
-  font-family: var(--font-ui);
 }
 
 .chat-narrative > h2 {
@@ -933,15 +957,13 @@
   background: var(--chat-vivid-red);
 }
 
-.chat-turn {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
 .chat-composer {
   padding: 10px 14px 2px;
   border-top: 1px solid var(--chat-line);
+}
+
+.chat-suggestions-slot {
+  overflow: hidden;
 }
 
 .chat-suggestions {
@@ -949,7 +971,22 @@
   gap: 6px;
   overflow-x: auto;
   padding-bottom: 7px;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+}
+
+.chat-suggestions::-webkit-scrollbar {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .chat-suggestions {
+    user-select: none;
+  }
+}
+
+.chat-suggestions[data-dragging="true"],
+.chat-suggestions[data-dragging="true"] button {
+  cursor: grabbing;
 }
 
 .chat-suggestions button {
@@ -968,6 +1005,10 @@
 
 .chat-suggestions button:hover {
   background: #ded2ba;
+}
+
+.chat-suggestions[aria-hidden="true"] {
+  pointer-events: none;
 }
 
 .chat-suggestions button span {

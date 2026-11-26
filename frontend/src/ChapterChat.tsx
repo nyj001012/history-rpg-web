@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useReducer, useRef, useState, useSyncExternalStore } from 'react';
+import { motion } from 'framer-motion';
 
 function InfluenceIcon() {
   return (
@@ -382,27 +383,167 @@ type ChapterChatProps = {
   chapter: { id: string; number: number; title: string };
 };
 
+type ChatEntry =
+  | { kind: 'opening'; setting: string; text: string }
+  | { kind: 'history' | 'question' | 'narrative'; text: string }
+  | { kind: 'player'; text: string };
+
+type ChatReveal = { pending: ChatEntry[]; interval: number };
+type Conversation = {
+  log: ChatEntry[];
+  reveal: ChatReveal | null;
+  turnCount: number;
+};
+type ConversationEvent =
+  | { kind: 'advance'; reveal: ChatReveal; finishImmediately: boolean }
+  | { kind: 'submit'; text: string };
+
+const revealDuration = 2400;
+const revealMotionDuration = 320;
+const reducedMotionQuery = '(prefers-reduced-motion: reduce)';
+const getReducedMotion = () => window.matchMedia(reducedMotionQuery).matches;
+
+function subscribeToReducedMotion(onChange: () => void) {
+  const media = window.matchMedia(reducedMotionQuery);
+  media.addEventListener('change', onChange);
+  return () => media.removeEventListener('change', onChange);
+}
+
+const easeOutExpo = (t: number) => t === 1 ? 1 : 1 - 2 ** (-10 * t);
+
+function startConversation(scenario: Scenario | undefined): Conversation {
+  if (!scenario) return { log: [], reveal: null, turnCount: 0 };
+
+  const pending: ChatEntry[] = [];
+  if (scenario.pastAction) pending.push({ kind: 'player', text: scenario.pastAction });
+  for (const paragraph of scenario.response ?? []) pending.push({ kind: 'narrative', text: paragraph });
+  if (scenario.consequence) pending.push({ kind: 'history', text: scenario.consequence });
+  pending.push({ kind: 'question', text: scenario.question });
+
+  return {
+    log: [{ kind: 'opening', setting: scenario.setting, text: scenario.opening }],
+    reveal: { pending, interval: (revealDuration - revealMotionDuration) / pending.length },
+    turnCount: 0,
+  };
+}
+
+function updateConversation(state: Conversation, event: ConversationEvent): Conversation {
+  if (event.kind === 'advance') {
+    // A submission replaces the pending reply. An old timer cannot advance its replacement.
+    if (state.reveal !== event.reveal) return state;
+    const [next, ...pending] = event.reveal.pending;
+    if (!next) return { ...state, reveal: null };
+    return {
+      ...state,
+      log: [...state.log, next],
+      reveal: event.finishImmediately && !pending.length ? null : { ...event.reveal, pending },
+    };
+  }
+
+  const log: ChatEntry[] = [
+    ...state.log,
+    ...(state.reveal?.pending ?? []),
+    { kind: 'player', text: event.text },
+  ];
+  // Local replies stand in for the future chat API.
+  const reply = ['상대가 당신의 말을 듣고 잠시 생각에 잠깁니다.', '이윽고 상대가 다시 당신을 바라봅니다.'];
+  return {
+    log,
+    reveal: {
+      pending: [
+        ...reply.map((text): ChatEntry => ({ kind: 'narrative', text })),
+        { kind: 'question', text: '이제 어떻게 하시겠습니까?' },
+      ],
+      interval: (revealDuration - revealMotionDuration) / (reply.length + 1),
+    },
+    turnCount: state.turnCount + 1,
+  };
+}
+
+function ChatLogEntry({ entry, reduceMotion }: { entry: ChatEntry; reduceMotion: boolean }) {
+  const rise = {
+    initial: reduceMotion ? false as const : { opacity: 0, y: 16 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: reduceMotion ? 0 : revealMotionDuration / 1000, ease: easeOutExpo },
+  };
+
+  switch (entry.kind) {
+    case 'opening':
+      return <motion.article className="chat-narrative" {...rise}><h2>{entry.setting}</h2><p>{entry.text}</p></motion.article>;
+    case 'history':
+      return (
+        <motion.aside className="chat-history-change" aria-label="역사 수정 알림" {...rise}>
+          <strong>역사 수정</strong>
+          <p>{entry.text}</p>
+        </motion.aside>
+      );
+    case 'question':
+      return <motion.p className="chat-question" {...rise}>{entry.text}</motion.p>;
+    case 'narrative':
+      return <motion.p className="chat-narrative" {...rise}>{entry.text}</motion.p>;
+    case 'player':
+      return <p className="chat-player-message">{entry.text}</p>;
+  }
+}
+
 export function ChapterChat({ chapter }: ChapterChatProps) {
   const scenario = hasChatScenario(chapter.id) ? scenarios[chapter.id] : undefined;
   const [draft, setDraft] = useState('');
-  const [actions, setActions] = useState<string[]>([]);
+  const [conversation, dispatch] = useReducer(updateConversation, scenario, startConversation);
+  const { reveal, log, turnCount } = conversation;
+  const isAnimating = reveal !== null;
+  const reduceMotion = useSyncExternalStore(subscribeToReducedMotion, getReducedMotion);
   const [showDashboard, setShowDashboard] = useState(false);
   const [dialog, setDialog] = useState<'' | 'settings' | 'help'>('');
   const headingRef = useRef<HTMLHeadingElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const followLog = useRef(true);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const suggestionDrag = useRef<{ pointerId: number; x: number; scrollLeft: number } | null>(null);
+  const draggedSuggestion = useRef(false);
 
   useEffect(() => {
     headingRef.current?.focus();
   }, []);
 
   useEffect(() => {
-    const log = logRef.current;
-    if (actions.length && log) {
-      log.scrollTop = log.scrollHeight;
+    const row = suggestionsRef.current;
+    if (!row) return;
+
+    function scrollSuggestions(event: WheelEvent) {
+      if (!row || event.ctrlKey || Math.abs(event.deltaX) >= Math.abs(event.deltaY)) return;
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? row.clientWidth : 1;
+      const before = row.scrollLeft;
+      row.scrollLeft += event.deltaY * unit;
+      if (row.scrollLeft !== before) event.preventDefault();
     }
-  }, [actions]);
+
+    row.addEventListener('wheel', scrollSuggestions, { passive: false });
+    return () => row.removeEventListener('wheel', scrollSuggestions);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!reveal) return;
+    const advance = () => dispatch({ kind: 'advance', reveal, finishImmediately: reduceMotion });
+    const remaining = reveal.pending.length;
+    if (reduceMotion && !remaining) {
+      advance();
+      return;
+    }
+    // Keep the same total wait without leaving a waiting period after the last line is visible.
+    const delay = remaining
+      ? reveal.interval + (reduceMotion && remaining === 1 ? revealMotionDuration : 0)
+      : revealMotionDuration;
+    const timer = window.setTimeout(advance, delay);
+    return () => window.clearTimeout(timer);
+  }, [reveal, reduceMotion]);
+
+  useEffect(() => {
+    const element = logRef.current;
+    if (turnCount && followLog.current && element) element.scrollTop = element.scrollHeight;
+  }, [log, turnCount]);
 
   useEffect(() => {
     const element = dialogRef.current;
@@ -412,20 +553,51 @@ export function ChapterChat({ chapter }: ChapterChatProps) {
   }, [dialog]);
 
   function chooseSuggestion(text: string) {
+    if (isAnimating) return;
     setDraft(text);
     const textarea = textareaRef.current;
     if (!textarea) return;
     textarea.focus();
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (!reduceMotion) {
       textarea.animate([{ backgroundColor: '#efc9ab' }, { backgroundColor: 'transparent' }], 260);
     }
+  }
+
+  function startSuggestionDrag(event: React.PointerEvent<HTMLDivElement>) {
+    if (!event.isPrimary || event.button !== 0) return;
+    draggedSuggestion.current = false;
+    if (event.pointerType !== 'mouse') return;
+    const row = event.currentTarget;
+    if (row.scrollWidth <= row.clientWidth) return;
+    suggestionDrag.current = { pointerId: event.pointerId, x: event.clientX, scrollLeft: row.scrollLeft };
+  }
+
+  function moveSuggestionDrag(event: React.PointerEvent<HTMLDivElement>) {
+    const drag = suggestionDrag.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const distance = event.clientX - drag.x;
+    const row = event.currentTarget;
+    if (!draggedSuggestion.current) {
+      if (Math.abs(distance) < 5) return;
+      draggedSuggestion.current = true;
+      row.setPointerCapture(event.pointerId);
+      row.dataset.dragging = 'true';
+    }
+    row.scrollLeft = drag.scrollLeft - distance;
+  }
+
+  function finishSuggestionDrag(event: React.PointerEvent<HTMLDivElement>) {
+    if (suggestionDrag.current?.pointerId !== event.pointerId) return;
+    suggestionDrag.current = null;
+    delete event.currentTarget.dataset.dragging;
   }
 
   function submitAction(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const action = draft.trim();
-    if (!action) return;
-    setActions((previous) => [...previous, action]);
+    if (!action || !scenario) return;
+    followLog.current = true;
+    dispatch({ kind: 'submit', text: action });
     setDraft('');
     textareaRef.current?.focus();
   }
@@ -460,40 +632,53 @@ export function ChapterChat({ chapter }: ChapterChatProps) {
           />
         </header>
 
-        <div ref={logRef} className="chat-log" role="log" aria-label="챕터 대화" tabIndex={0}>
+        <div
+          ref={logRef}
+          className="chat-log"
+          role="log"
+          aria-label="챕터 대화"
+          tabIndex={0}
+          onScroll={({ currentTarget }) => {
+            const { scrollTop, scrollHeight, clientHeight } = currentTarget;
+            followLog.current = scrollHeight - scrollTop - clientHeight <= 24;
+          }}
+        >
           <div className="chat-date-marker">{scenario.day}</div>
-          <article className="chat-narrative">
-            <h2>{scenario.setting}</h2>
-            <p>{scenario.opening}</p>
-          </article>
-          {scenario.pastAction && <p className="chat-player-message">{scenario.pastAction}</p>}
-          {scenario.response && (
-            <div className="chat-narrative">
-              {scenario.response.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-            </div>
-          )}
-          {scenario.consequence && (
-            <aside className="chat-history-change" aria-label="역사 수정 알림">
-              <strong>역사 수정</strong>
-              <p>{scenario.consequence}</p>
-            </aside>
-          )}
-          <p className="chat-question">{scenario.question}</p>
-          {actions.map((action, index) => (
-            <div className="chat-turn" key={index}>
-              <p className="chat-player-message">{action}</p>
-              <p className="chat-action-result">행동을 기록했습니다. 다음 이야기는 준비 중입니다.</p>
-            </div>
-          ))}
+          {log.map((entry, index) => <ChatLogEntry key={index} entry={entry} reduceMotion={reduceMotion} />)}
         </div>
 
         <form className="chat-composer" onSubmit={submitAction}>
-          <div className="chat-suggestions" aria-label="예시 행동" role="group">
-            {scenario.suggestions.map((text, index) => (
-              <button key={text} type="button" onClick={() => chooseSuggestion(text)}>
-                <span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span> {text}
-              </button>
-            ))}
+          <div className="chat-suggestions-slot">
+            <motion.div
+              ref={suggestionsRef}
+              className="chat-suggestions"
+              aria-label="예시 행동"
+              role="group"
+              aria-hidden={isAnimating}
+              onPointerDown={startSuggestionDrag}
+              onPointerMove={moveSuggestionDrag}
+              onPointerUp={finishSuggestionDrag}
+              onPointerCancel={finishSuggestionDrag}
+              onLostPointerCapture={finishSuggestionDrag}
+              onPointerLeave={(event) => {
+                if (!event.currentTarget.hasPointerCapture(event.pointerId)) finishSuggestionDrag(event);
+              }}
+              onClickCapture={(event) => {
+                if (!draggedSuggestion.current || event.detail === 0) return;
+                draggedSuggestion.current = false;
+                event.preventDefault();
+                event.stopPropagation();
+              }}
+              initial={false}
+              animate={{ y: isAnimating && !reduceMotion ? '100%' : '0%', opacity: isAnimating ? 0 : 1 }}
+              transition={{ duration: reduceMotion ? 0 : 0.32, ease: easeOutExpo }}
+            >
+              {scenario.suggestions.map((text, index) => (
+                <button key={text} type="button" disabled={isAnimating} onClick={() => chooseSuggestion(text)}>
+                  <span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span> {text}
+                </button>
+              ))}
+            </motion.div>
           </div>
           <div className="chat-input-row">
             <label className="sr-only" htmlFor="chat-action">당신의 행동</label>
