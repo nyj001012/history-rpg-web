@@ -712,6 +712,7 @@
 
 .chat-header {
   border-bottom: 1px solid var(--chat-line);
+  overflow-x: clip;
 }
 
 .chat-heading-row {
@@ -955,6 +956,19 @@
   height: 3px;
   margin-bottom: 8px;
   background: var(--chat-vivid-red);
+}
+
+.chat-interrupt-stamp {
+  align-self: center;
+  width: fit-content;
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 2px solid currentColor;
+  background: var(--chat-light-paper);
+  color: var(--archive-red);
+  font: 400 clamp(0.8rem, 1.35vw, 1rem)/1.5 var(--font-pixel);
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
 .chat-composer {
