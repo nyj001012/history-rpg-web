@@ -5,14 +5,22 @@ import { create } from 'zustand';
 import { ChapterArchive, mockArchive } from './ChapterArchive.tsx';
 import './main.css';
 
-const useConnection = create((set) => ({
+type ConnectionStatus = 'idle' | 'pending' | 'online' | 'offline';
+
+type ConnectionState = {
+  status: ConnectionStatus;
+  check: () => Promise<void>;
+};
+
+const useConnection = create<ConnectionState>((set) => ({
   status: 'idle',
   async check() {
     set({ status: 'pending' });
     try {
       const response = await fetch('/api/health', { signal: AbortSignal.timeout(5000) });
-      const data = response.ok ? await response.json() : null;
-      set({ status: data?.status === 'ok' ? 'online' : 'offline' });
+      const data: unknown = response.ok ? await response.json() : null;
+      const isOnline = typeof data === 'object' && data !== null && 'status' in data && data.status === 'ok';
+      set({ status: isOnline ? 'online' : 'offline' });
     } catch {
       set({ status: 'offline' });
     }
@@ -59,6 +67,9 @@ if (!isDiagnostics) {
   document.title = '이야기 속으로';
 }
 
-createRoot(document.getElementById('root')).render(
+const root = document.getElementById('root');
+if (!root) throw new Error('Missing app root');
+
+createRoot(root).render(
   isDiagnostics ? <ConnectionDiagnostics /> : <ChapterArchive archive={mockArchive} />,
 );
