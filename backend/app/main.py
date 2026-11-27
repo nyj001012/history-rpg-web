@@ -3,8 +3,16 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
 
+from .application.gm_turn import GMProvider, GMTurnContext, get_gm_decision
+from .config import GeminiSettings
 from .game_engine import CHAPTERS, SessionEnded
-from .schemas import Error, GMDecision, StartRequest, StartResponse, TurnRequest, TurnResponse
+from .infrastructure.gemini import (
+    GMTransport,
+    GeminiProvider,
+    create_gemini_client,
+    create_gemini_transport,
+)
+from .schemas import Error, StartRequest, StartResponse, TurnRequest, TurnResponse
 from .store import SessionNotFound, SessionStore
 
 
@@ -12,11 +20,30 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-def create_app() -> FastAPI:
+def create_app(gm_transport: GMTransport | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(server: FastAPI) -> AsyncIterator[None]:
+        settings = GeminiSettings.from_environment()
         server.state.game_sessions = SessionStore()
-        yield
+        if gm_transport is not None or not settings.api_key:
+            server.state.gm_provider = (
+                GeminiProvider(gm_transport, settings.timeout_seconds)
+                if gm_transport is not None
+                else None
+            )
+            yield
+            return
+
+        client = create_gemini_client(settings)
+        try:
+            async with client.aio:
+                transport = create_gemini_transport(client, settings.model)
+                server.state.gm_provider = GeminiProvider(
+                    transport, settings.timeout_seconds
+                )
+                yield
+        finally:
+            client.close()
 
     server = FastAPI(title="대체역사 시뮬레이터", lifespan=lifespan)
     server.add_api_route("/api/health", health, methods=["GET"])
@@ -45,14 +72,20 @@ def create_app() -> FastAPI:
     )
     async def play_turn(body: TurnRequest, request: Request) -> TurnResponse:
         store: SessionStore = request.app.state.game_sessions
+        provider: GMProvider | None = request.app.state.gm_provider
         try:
             async with store.locked(body.session_id) as session:
                 session.require_active()
-                decision = GMDecision(
-                    narrative="광장에 잠시 정적이 흐릅니다. 사람들은 한 걸음 물러서고 당신 앞에 길이 열립니다.",
-                    tendency="moderate",
-                    trust_delta=0,
-                    scene_id=8,
+                decision = await get_gm_decision(
+                    GMTurnContext(
+                        chapter_id=session.chapter.chapter_id,
+                        turn=session.turn,
+                        current_trust=session.current_trust,
+                        scene_id=session.scene_id,
+                        recent_history=tuple(session.recent_history),
+                        player_input=body.player_input,
+                    ),
+                    provider,
                 )
                 return session.apply_decision(body.player_input, decision)
         except SessionNotFound:
