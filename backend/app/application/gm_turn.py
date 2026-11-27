@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from ..game_engine import TurnRecord
-from ..schemas import GMDecision
+from ..schemas.gm import GMDecision
 
 
 _MAX_ATTEMPTS = 3

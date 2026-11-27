@@ -2,7 +2,9 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import Literal
 
-from .schemas import GMDecision, StartResponse, TurnResponse, TRUST_DEPLETED, TURN_LIMIT_REACHED
+from .schemas.common import TRUST_DEPLETED, TURN_LIMIT_REACHED
+from .schemas.gm import GMDecision
+from .schemas.responses import StartResponse, TurnResponse
 
 
 @dataclass(frozen=True)
