@@ -1679,42 +1679,19 @@
   overflow-wrap: anywhere;
 }
 
-.ending-archive-collection {
-  display: grid;
-  gap: 8px;
-  width: min(100%, 24rem);
+.ending-latest {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid #8b7961;
+  border-left: 3px solid #8e231e;
+  background-color: #f2e7cd;
+}
+
+.ending-latest h2 {
+  margin-bottom: 8px;
   color: #6c2c25;
-  font: 400 calc(0.9rem * var(--game-text-scale, 1))/1.4 var(--font-pixel);
-}
-
-.ending-archive-collection label {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 4px 12px;
-}
-
-.ending-archive-collection progress {
-  appearance: none;
-  width: 100%;
-  height: 6px;
-  overflow: hidden;
-  border: 0;
-  border-radius: 5px;
-  background-color: #69574432;
-  accent-color: #8a3228;
-}
-
-.ending-archive-collection progress::-webkit-progress-bar {
-  background-color: #69574432;
-}
-
-.ending-archive-collection progress::-webkit-progress-value {
-  background-color: #8a3228;
-}
-
-.ending-archive-collection progress::-moz-progress-bar {
-  background-color: #8a3228;
+  font-size: calc(0.82rem * var(--game-text-scale, 1));
+  font-weight: 700;
 }
 
 .ending-filters {
@@ -1763,7 +1740,7 @@
   box-shadow: 2px 3px 0 #6b58432e;
 }
 
-.ending-card-unlocked:hover {
+.ending-card:hover {
   box-shadow: 3px 8px 16px #47352135;
 }
 
@@ -1783,10 +1760,25 @@
   font-weight: 600;
 }
 
-.ending-card h2 {
+.ending-card h2,
+.ending-latest-link {
   color: #8e231e;
   font: 700 calc(1.2rem * var(--game-text-scale, 1))/1.35 var(--font-display);
   overflow-wrap: anywhere;
+}
+
+.ending-latest-link {
+  text-align: left;
+}
+
+.ending-latest-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.ending-card article:focus {
+  outline: 2px solid var(--archive-red);
+  outline-offset: -3px;
 }
 
 .ending-card-stats {
@@ -1836,37 +1828,10 @@
   height: 23px;
 }
 
-.ending-card-new {
-  justify-self: end;
-  width: fit-content;
-  margin: 9px 34px 0 0;
-  padding: 2px 5px;
-  border: 1px solid currentColor;
-  color: #8e231e;
-  background: #e8d2b1;
-  font: 400 calc(0.8rem * var(--game-text-scale, 1))/1.3 var(--font-pixel);
-}
-
-.ending-card-locked {
-  border-color: #8b796166;
-  background-color: #d6ccba;
-  filter: grayscale(1);
-  box-shadow: 2px 3px 0 #6b584315;
-}
-
-.ending-card-locked h2 {
-  color: #555047;
-  letter-spacing: 0.18em;
-}
-
-.ending-card-locked-label {
-  margin-top: 8px;
-  color: #5c564b;
-  font-size: calc(0.82rem * var(--game-text-scale, 1));
-}
-
-.ending-card-locked article {
-  opacity: 0.4;
+.ending-empty {
+  padding: 24px 0;
+  color: #695442;
+  font: 400 calc(0.9rem * var(--game-text-scale, 1))/1.4 var(--font-pixel);
 }
 
 @media (max-width: 560px) {

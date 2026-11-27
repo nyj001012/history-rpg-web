@@ -54,7 +54,7 @@ export function ReportIcon({ className = 'chat-status-art' }: { className?: stri
   );
 }
 
-function HeaderIcon({ kind }: { kind: 'menu' | 'settings' | 'close' | 'lock' }) {
+function HeaderIcon({ kind }: { kind: 'menu' | 'settings' | 'close' }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       {kind === 'menu' && <path d="M4 6h16M4 12h16M4 18h16" />}
@@ -63,7 +63,6 @@ function HeaderIcon({ kind }: { kind: 'menu' | 'settings' | 'close' | 'lock' }) 
         <path d="m10 3-.5 2.3-1.8.8-2-1-2.6 2.6 1 2-.8 1.8L1 12l.5 2.5 2.3.5.8 1.8-1 2 2.6 2.6 2-1 1.8.8.5 2.3h3l.5-2.3 1.8-.8 2 1 2.6-2.6-1-2 .8-1.8 2.3-.5.5-2.5-2.3-.5-.8-1.8 1-2-2.6-2.6-2 1-1.8-.8-.5-2.3Z" transform="translate(1 -.5) scale(.91)" />
         <circle cx="12" cy="12" r="3" />
       </>}
-      {kind === 'lock' && <><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2" /></>}
     </svg>
   );
 }
@@ -166,45 +165,53 @@ export function GameHeader({
   );
 }
 
-type Ending = { id: string; chapterId: string } & (
-  | { unlocked: false }
-  | { unlocked: true; title: string; description: string; unlockedOn: string; stats: { influence: number; ideology: number; tactics: number } }
-);
+type Ending = {
+  id: string;
+  chapterId: string;
+  title: string;
+  description: string;
+  reachedOn: string;
+  stats: { influence: number; ideology: number; tactics: number };
+};
 
 const endings: readonly Ending[] = [
-  { id: 'french-guillotine', chapterId: 'french-revolution', unlocked: true, title: '단두대의 이슬', description: '광장의 함성이 멎었다. 마차가 지나간 자리에는 당신이 흘린 모자 하나만 남았다.', unlockedOn: '2025-05-10', stats: { influence: 80, ideology: 10, tactics: 100 } },
-  { id: 'french-earbuds', chapterId: 'french-revolution', unlocked: true, title: '에어팟을 낀 마리 앙투아네트', description: '왕비는 이어폰 한쪽을 빼고 창밖을 바라봤다. 광장이 이렇게 조용한 줄은 처음 알았다고 말했다.', unlockedOn: '2025-05-12', stats: { influence: 65, ideology: 42, tactics: 24 } },
-  { id: 'french-unknown', chapterId: 'french-revolution', unlocked: false },
-  { id: 'joseon-seal', chapterId: 'last-night-of-joseon', unlocked: true, title: '새벽에 찍힌 국새', description: '경운궁의 등불이 꺼질 무렵, 아직 마르지 않은 붉은 인장이 새 국호 아래 남았다.', unlockedOn: '2025-05-11', stats: { influence: 72, ideology: 56, tactics: 38 } },
-  { id: 'joseon-unknown', chapterId: 'last-night-of-joseon', unlocked: false },
-  { id: 'prohibition-unknown', chapterId: 'prohibition', unlocked: false },
-  { id: 'moon-unknown', chapterId: 'moon-landing', unlocked: false },
-  { id: 'vinland-unknown', chapterId: 'vinland', unlocked: false },
-  { id: 'telegram-unknown', chapterId: 'telegram', unlocked: false },
+  { id: 'french-guillotine', chapterId: 'french-revolution', title: '단두대의 이슬', description: '광장의 함성이 멎었다. 마차가 지나간 자리에는 당신이 흘린 모자 하나만 남았다.', reachedOn: '2025-05-10', stats: { influence: 80, ideology: 10, tactics: 100 } },
+  { id: 'french-earbuds', chapterId: 'french-revolution', title: '에어팟을 낀 마리 앙투아네트', description: '왕비는 이어폰 한쪽을 빼고 창밖을 바라봤다. 광장이 이렇게 조용한 줄은 처음 알았다고 말했다.', reachedOn: '2025-05-12', stats: { influence: 65, ideology: 42, tactics: 24 } },
+  { id: 'joseon-seal', chapterId: 'last-night-of-joseon', title: '새벽에 찍힌 국새', description: '경운궁의 등불이 꺼질 무렵, 아직 마르지 않은 붉은 인장이 새 국호 아래 남았다.', reachedOn: '2025-05-11', stats: { influence: 72, ideology: 56, tactics: 38 } },
 ];
 
-const easeOutElastic = (progress: number): number => {
-  if (progress === 0 || progress === 1) return progress;
-  return 2 ** (-10 * progress) * Math.sin((progress * 10 - 0.75) * (2 * Math.PI / 3)) + 1;
-};
+const recentEndings = [...endings].sort((a, b) => b.reachedOn.localeCompare(a.reachedOn));
 
 export function EndingArchiveLayout({ chapters }: { chapters: readonly { id: string; title: string }[] }) {
   const [filter, setFilter] = useState<string | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const latestRecordRef = useRef<HTMLElement>(null);
+  const pendingJump = useRef(false);
   const reduceMotion = useReducedMotion();
   const motionScale = useGameMotionScale();
   const textSize = useGameTextSize();
-  const unlocked = endings.filter((ending) => ending.unlocked);
-  const latest = unlocked.reduce<(typeof unlocked)[number] | undefined>((candidate, ending) => (
-    !candidate || ending.unlockedOn > candidate.unlockedOn ? ending : candidate
-  ), undefined);
-  const progress = Math.floor(unlocked.length / endings.length * 100);
-  const visibleEndings = endings.filter((ending) => filter === null || filter === ending.chapterId);
+  const latest: Ending | undefined = recentEndings[0];
+  const visibleEndings = recentEndings.filter((ending) => filter === null || filter === ending.chapterId);
 
   useEffect(() => {
     window.scrollTo(0, 0);
     headingRef.current?.focus({ preventScroll: true });
   }, []);
+
+  useEffect(() => {
+    if (!pendingJump.current) return;
+    pendingJump.current = false;
+    latestRecordRef.current?.focus();
+  }, [filter]);
+
+  function openLatestRecord() {
+    if (latestRecordRef.current) {
+      latestRecordRef.current.focus();
+      return;
+    }
+    pendingJump.current = true;
+    setFilter(null);
+  }
 
   return (
     <div className="ending-archive" data-game-text-size={textSize}>
@@ -216,11 +223,13 @@ export function EndingArchiveLayout({ chapters }: { chapters: readonly { id: str
         transition={{ duration: reduceMotion ? 0 : 0.24 * motionScale, ease: 'easeOut' }}
       >
         <div className="ending-archive-summary">
-          <h1 id="ending-archive-title" ref={headingRef} tabIndex={-1}>제 404호 기밀 열람실</h1>
-          <div className="ending-archive-collection">
-            <label htmlFor="ending-collection">기록 복원율 <b>{unlocked.length} / {endings.length} ({progress}%)</b></label>
-            <progress id="ending-collection" value={unlocked.length} max={endings.length} />
-          </div>
+          <h1 id="ending-archive-title" ref={headingRef} tabIndex={-1}>엔딩 기록</h1>
+          {latest && (
+            <section className="ending-latest" aria-labelledby="ending-latest-heading">
+              <h2 id="ending-latest-heading">최근에 맞은 결말</h2>
+              <button type="button" className="ending-latest-link" onClick={openLatestRecord}>{latest.title}</button>
+            </section>
+          )}
         </div>
         <div className="ending-filters" role="group" aria-label="챕터 필터">
           <button type="button" aria-pressed={filter === null} onClick={() => setFilter(null)}>전체</button>
@@ -228,7 +237,8 @@ export function EndingArchiveLayout({ chapters }: { chapters: readonly { id: str
             <button key={chapter.id} type="button" aria-pressed={filter === chapter.id} onClick={() => setFilter(chapter.id)}>{chapter.title}</button>
           ))}
         </div>
-        <motion.ul
+        {visibleEndings.length === 0 && <p className="ending-empty" role="status">기록 없음</p>}
+        {visibleEndings.length > 0 && <motion.ul
           key={filter ?? 'all'}
           className="ending-grid"
           aria-label="엔딩 기록 목록"
@@ -241,44 +251,32 @@ export function EndingArchiveLayout({ chapters }: { chapters: readonly { id: str
             return (
               <motion.li
                 key={ending.id}
-                className={`ending-card ${ending.unlocked ? 'ending-card-unlocked' : 'ending-card-locked'}`}
+                className="ending-card"
                 variants={{
                   hidden: { opacity: 0, y: 10 },
                   visible: { opacity: 1, y: 0, transition: { duration: reduceMotion ? 0 : 0.26 * motionScale, ease: 'easeOut' } },
                 }}
-                whileHover={ending.unlocked && !reduceMotion ? { y: -4 } : undefined}
+                whileHover={reduceMotion ? undefined : { y: -4 }}
               >
-                <article>
+                <article
+                  ref={latest?.id === ending.id ? latestRecordRef : undefined}
+                  tabIndex={latest?.id === ending.id ? -1 : undefined}
+                  aria-labelledby={`ending-title-${ending.id}`}
+                >
                   <p className="ending-card-chapter">{chapterTitle}</p>
-                  {ending.unlocked ? <>
-                    <h2>{ending.title}</h2>
-                    <dl className="ending-card-stats">
-                      <div><dt><span aria-hidden="true">👑</span><span className="sr-only">영향력</span></dt><dd>{ending.stats.influence}</dd></div>
-                      <div><dt><span aria-hidden="true">⚖️</span><span className="sr-only">이념</span></dt><dd>{ending.stats.ideology}</dd></div>
-                      <div><dt><span aria-hidden="true">⚔️</span><span className="sr-only">수단</span></dt><dd>{ending.stats.tactics}</dd></div>
-                    </dl>
-                    <p className="ending-card-memory">{ending.description}</p>
-                    <span className="ending-card-seal"><ReportIcon className="ending-card-report" /></span>
-                    {latest?.id === ending.id && (
-                      <motion.span
-                        className="ending-card-new"
-                        initial={reduceMotion ? false : { opacity: 0, scale: 1.55 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: reduceMotion ? 0 : 0.55 * motionScale, ease: easeOutElastic }}
-                      >
-                        [기록 갱신]
-                      </motion.span>
-                    )}
-                  </> : <>
-                    <h2><span aria-hidden="true">■■■■</span><span className="sr-only">미해금 엔딩</span></h2>
-                    <p className="ending-card-locked-label">기밀 해제 대기 중</p>
-                    <span className="ending-card-seal"><HeaderIcon kind="lock" /></span>
-                  </>}
+                  <h2 id={`ending-title-${ending.id}`}>{ending.title}</h2>
+                  <dl className="ending-card-stats">
+                    <div><dt><span aria-hidden="true">👑</span><span className="sr-only">영향력</span></dt><dd>{ending.stats.influence}</dd></div>
+                    <div><dt><span aria-hidden="true">⚖️</span><span className="sr-only">이념</span></dt><dd>{ending.stats.ideology}</dd></div>
+                    <div><dt><span aria-hidden="true">⚔️</span><span className="sr-only">수단</span></dt><dd>{ending.stats.tactics}</dd></div>
+                  </dl>
+                  <p className="ending-card-memory">{ending.description}</p>
+                  <span className="ending-card-seal"><ReportIcon className="ending-card-report" /></span>
                 </article>
               </motion.li>
             );
           })}
-        </motion.ul>
+        </motion.ul>}
       </motion.main>
     </div>
   );
