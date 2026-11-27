@@ -256,7 +256,10 @@ export function EndingArchiveLayout({ chapters }: { chapters: readonly { id: str
                   hidden: { opacity: 0, y: 10 },
                   visible: { opacity: 1, y: 0, transition: { duration: reduceMotion ? 0 : 0.26 * motionScale, ease: 'easeOut' } },
                 }}
-                whileHover={reduceMotion ? undefined : { y: -4 }}
+                whileHover={reduceMotion ? undefined : {
+                  y: -4,
+                  transition: { type: 'tween', duration: 0.18 * motionScale, ease: 'easeOut' },
+                }}
               >
                 <article
                   ref={latest?.id === ending.id ? latestRecordRef : undefined}
