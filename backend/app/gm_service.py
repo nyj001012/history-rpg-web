@@ -27,6 +27,20 @@ def _fallback_decision() -> GMDecision:
     )
 
 
+def _handle_turn_error(error: Exception, attempt: int) -> bool:
+    if isinstance(error, ValidationError):
+        reason = "invalid_output"
+    elif isinstance(error, errors.APIError):
+        if error.code not in _TRANSIENT_STATUS:
+            _LOGGER.warning("결정 대체: provider_error, 시도 %d", attempt)
+            return False
+        reason = "transient_provider_error"
+    else:
+        reason = "transport"
+    _LOGGER.warning("판단 요청 실패: %s, 시도 %d", reason, attempt)
+    return True
+
+
 class GMService:
     def __init__(self, transport: GMTransport | None, timeout_seconds: float) -> None:
         self._transport = transport
@@ -42,16 +56,15 @@ class GMService:
                 async with asyncio.timeout(self._timeout_seconds):
                     response_json = await self._transport(GM_SYSTEM_INSTRUCTION, context_json)
                 return GMDecision.model_validate_json(response_json)
-            except ValidationError:
-                failure = "invalid_output"
-            except (TimeoutError, ConnectionError, httpx.TransportError):
-                failure = "transport"
-            except errors.APIError as error:
-                if error.code not in _TRANSIENT_STATUS:
-                    _LOGGER.warning("결정 대체: provider_error, 시도 %d", attempt)
-                    return _fallback_decision()
-                failure = "transient_provider_error"
-            _LOGGER.warning("판단 요청 실패: %s, 시도 %d", failure, attempt)
+            except (
+                ValidationError,
+                TimeoutError,
+                ConnectionError,
+                httpx.TransportError,
+                errors.APIError,
+            ) as error:
+                if not _handle_turn_error(error, attempt):
+                    break
             if attempt < _MAX_ATTEMPTS:
                 await asyncio.sleep(0.1 * attempt)
         return _fallback_decision()
