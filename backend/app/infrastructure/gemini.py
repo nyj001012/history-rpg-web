@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import Awaitable, Callable
+from functools import partial
 
 import httpx
 from google import genai
@@ -17,22 +18,35 @@ _TRANSIENT_STATUS = {408, 429, 500, 502, 503, 504}
 
 
 def create_gemini_provider(transport: GMTransport, timeout_seconds: float) -> GMProvider:
-    async def decide(context: GMTurnContext) -> GMDecision:
-        context_json = serialize_context(context)
-        try:
-            async with asyncio.timeout(timeout_seconds):
-                response_json = await transport(GM_SYSTEM_INSTRUCTION, context_json)
-            return GMDecision.model_validate_json(response_json)
-        except ValidationError as error:
-            raise GMProviderError("invalid_output") from error
-        except (TimeoutError, ConnectionError, httpx.TransportError) as error:
-            raise GMProviderError("transport") from error
-        except errors.APIError as error:
-            if error.code in _TRANSIENT_STATUS:
-                raise GMProviderError("transient_provider_error") from error
-            raise GMProviderError("provider_error", retryable=False) from error
+    return partial(_request_gemini_decision, transport=transport, timeout_seconds=timeout_seconds)
 
-    return decide
+
+async def _request_gemini_decision(
+    context: GMTurnContext, *, transport: GMTransport, timeout_seconds: float
+) -> GMDecision:
+    context_json = serialize_context(context)
+    try:
+        async with asyncio.timeout(timeout_seconds):
+            response_json = await transport(GM_SYSTEM_INSTRUCTION, context_json)
+        return GMDecision.model_validate_json(response_json)
+    except (
+        ValidationError,
+        TimeoutError,
+        ConnectionError,
+        httpx.TransportError,
+        errors.APIError,
+    ) as error:
+        raise _translate_provider_error(error) from error
+
+
+def _translate_provider_error(error: Exception) -> GMProviderError:
+    if isinstance(error, ValidationError):
+        return GMProviderError("invalid_output")
+    if isinstance(error, errors.APIError):
+        if error.code in _TRANSIENT_STATUS:
+            return GMProviderError("transient_provider_error")
+        return GMProviderError("provider_error", retryable=False)
+    return GMProviderError("transport")
 
 
 def create_gemini_client(settings: GeminiSettings) -> genai.Client:
@@ -48,7 +62,8 @@ def create_gemini_client(settings: GeminiSettings) -> genai.Client:
 
 def _gemini_response_schema() -> dict[str, object]:
     schema = GMDecision.model_json_schema()
-    # Gemini does not enforce string length or defaults. Pydantic validates the original schema.
+    # Gemini에 전달하는 스키마에서는 문자열 길이 제한과 기본값을 제외합니다.
+    # 응답을 받으면 Pydantic으로 원래 스키마를 검증합니다.
     for name in ("narrative", "ending", "choices"):
         property_schema = schema["properties"][name]
         property_schema.pop("minLength", None)
