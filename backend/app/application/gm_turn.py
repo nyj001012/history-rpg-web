@@ -1,7 +1,7 @@
 import asyncio
 import logging
-from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from typing import Protocol
 
 from ..game_engine import TurnRecord
 from ..schemas import GMDecision
@@ -21,7 +21,8 @@ class GMTurnContext:
     player_input: str
 
 
-GMProvider = Callable[[GMTurnContext], Awaitable[GMDecision]]
+class GMProvider(Protocol):
+    async def make_decision(self, context: GMTurnContext) -> GMDecision: ...
 
 
 class GMProviderError(Exception):
@@ -30,19 +31,26 @@ class GMProviderError(Exception):
         self.retryable = retryable
 
 
-async def run_gm_turn(context: GMTurnContext, provider: GMProvider | None) -> GMDecision:
-    if provider is not None:
-        for attempt in range(1, _MAX_ATTEMPTS + 1):
-            try:
-                return await provider(context)
-            except GMProviderError as error:
-                if not error.retryable:
-                    _LOGGER.warning("결정 대체: %s, 시도 %d", error, attempt)
-                    break
-                _LOGGER.warning("판단 요청 실패: %s, 시도 %d", error, attempt)
-            if attempt < _MAX_ATTEMPTS:
-                await asyncio.sleep(0.1 * attempt)
+async def get_gm_decision(context: GMTurnContext, provider: GMProvider | None) -> GMDecision:
+    if provider is None:
+        return _build_fallback_decision()
 
+    for attempt in range(1, _MAX_ATTEMPTS + 1):
+        try:
+            decision = await provider.make_decision(context)
+            return decision
+        except GMProviderError as error:
+            if not error.retryable:
+                _LOGGER.warning("결정 대체: %s, 시도 %d", error, attempt)
+                break
+            _LOGGER.warning("판단 요청 실패: %s, 시도 %d", error, attempt)
+        if attempt < _MAX_ATTEMPTS:
+            await asyncio.sleep(0.1 * attempt)
+
+    return _build_fallback_decision()
+
+
+def _build_fallback_decision() -> GMDecision:
     return GMDecision(
         narrative="광장에 잠시 정적이 흐릅니다. 사람들은 한 걸음 물러서고 당신 앞에 길이 열립니다.",
         tendency="moderate",

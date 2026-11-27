@@ -3,13 +3,13 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
 
-from .application.gm_turn import GMProvider, GMTurnContext, run_gm_turn
+from .application.gm_turn import GMProvider, GMTurnContext, get_gm_decision
 from .config import GeminiSettings
 from .game_engine import CHAPTERS, SessionEnded
 from .infrastructure.gemini import (
     GMTransport,
+    GeminiProvider,
     create_gemini_client,
-    create_gemini_provider,
     create_gemini_transport,
 )
 from .schemas import Error, StartRequest, StartResponse, TurnRequest, TurnResponse
@@ -27,7 +27,7 @@ def create_app(gm_transport: GMTransport | None = None) -> FastAPI:
         server.state.game_sessions = SessionStore()
         if gm_transport is not None or not settings.api_key:
             server.state.gm_provider = (
-                create_gemini_provider(gm_transport, settings.timeout_seconds)
+                GeminiProvider(gm_transport, settings.timeout_seconds)
                 if gm_transport is not None
                 else None
             )
@@ -38,7 +38,7 @@ def create_app(gm_transport: GMTransport | None = None) -> FastAPI:
         try:
             async with client.aio:
                 transport = create_gemini_transport(client, settings.model)
-                server.state.gm_provider = create_gemini_provider(
+                server.state.gm_provider = GeminiProvider(
                     transport, settings.timeout_seconds
                 )
                 yield
@@ -76,7 +76,7 @@ def create_app(gm_transport: GMTransport | None = None) -> FastAPI:
         try:
             async with store.locked(body.session_id) as session:
                 session.require_active()
-                decision = await run_gm_turn(
+                decision = await get_gm_decision(
                     GMTurnContext(
                         chapter_id=session.chapter.chapter_id,
                         turn=session.turn,

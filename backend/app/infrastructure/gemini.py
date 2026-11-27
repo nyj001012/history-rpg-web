@@ -1,13 +1,13 @@
 import asyncio
 from collections.abc import Awaitable, Callable
-from functools import partial
+from dataclasses import dataclass
 
 import httpx
 from google import genai
 from google.genai import errors, types
 from pydantic import ValidationError
 
-from ..application.gm_turn import GMProvider, GMProviderError, GMTurnContext
+from ..application.gm_turn import GMProviderError, GMTurnContext
 from ..config import GeminiSettings
 from ..schemas import GMDecision
 from .gemini_prompts import GM_SYSTEM_INSTRUCTION, serialize_context
@@ -17,26 +17,25 @@ GMTransport = Callable[[str, str], Awaitable[str]]
 _TRANSIENT_STATUS = {408, 429, 500, 502, 503, 504}
 
 
-def create_gemini_provider(transport: GMTransport, timeout_seconds: float) -> GMProvider:
-    return partial(_request_gemini_decision, transport=transport, timeout_seconds=timeout_seconds)
+@dataclass(frozen=True)
+class GeminiProvider:
+    transport: GMTransport
+    timeout_seconds: float
 
-
-async def _request_gemini_decision(
-    context: GMTurnContext, *, transport: GMTransport, timeout_seconds: float
-) -> GMDecision:
-    context_json = serialize_context(context)
-    try:
-        async with asyncio.timeout(timeout_seconds):
-            response_json = await transport(GM_SYSTEM_INSTRUCTION, context_json)
-        return GMDecision.model_validate_json(response_json)
-    except (
-        ValidationError,
-        TimeoutError,
-        ConnectionError,
-        httpx.TransportError,
-        errors.APIError,
-    ) as error:
-        raise _translate_provider_error(error) from error
+    async def make_decision(self, context: GMTurnContext) -> GMDecision:
+        context_json = serialize_context(context)
+        try:
+            async with asyncio.timeout(self.timeout_seconds):
+                response_json = await self.transport(GM_SYSTEM_INSTRUCTION, context_json)
+            return GMDecision.model_validate_json(response_json)
+        except (
+            ValidationError,
+            TimeoutError,
+            ConnectionError,
+            httpx.TransportError,
+            errors.APIError,
+        ) as error:
+            raise _translate_provider_error(error) from error
 
 
 def _translate_provider_error(error: Exception) -> GMProviderError:
