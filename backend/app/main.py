@@ -3,10 +3,15 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
 
+from .application.gm_turn import GMProvider, GMTurnContext, run_gm_turn
 from .config import GeminiSettings
 from .game_engine import CHAPTERS, SessionEnded
-from .gm_service import GMService, GMTransport, create_gemini_client, create_gemini_transport
-from .prompts import GMTurnContext
+from .infrastructure.gemini import (
+    GMTransport,
+    create_gemini_client,
+    create_gemini_provider,
+    create_gemini_transport,
+)
 from .schemas import Error, StartRequest, StartResponse, TurnRequest, TurnResponse
 from .store import SessionNotFound, SessionStore
 
@@ -21,7 +26,11 @@ def create_app(gm_transport: GMTransport | None = None) -> FastAPI:
         settings = GeminiSettings.from_environment()
         server.state.game_sessions = SessionStore()
         if gm_transport is not None or not settings.api_key:
-            server.state.gm_service = GMService(gm_transport, settings.timeout_seconds)
+            server.state.gm_provider = (
+                create_gemini_provider(gm_transport, settings.timeout_seconds)
+                if gm_transport is not None
+                else None
+            )
             yield
             return
 
@@ -29,7 +38,9 @@ def create_app(gm_transport: GMTransport | None = None) -> FastAPI:
         try:
             async with client.aio:
                 transport = create_gemini_transport(client, settings.model)
-                server.state.gm_service = GMService(transport, settings.timeout_seconds)
+                server.state.gm_provider = create_gemini_provider(
+                    transport, settings.timeout_seconds
+                )
                 yield
         finally:
             client.close()
@@ -61,11 +72,11 @@ def create_app(gm_transport: GMTransport | None = None) -> FastAPI:
     )
     async def play_turn(body: TurnRequest, request: Request) -> TurnResponse:
         store: SessionStore = request.app.state.game_sessions
-        service: GMService = request.app.state.gm_service
+        provider: GMProvider | None = request.app.state.gm_provider
         try:
             async with store.locked(body.session_id) as session:
                 session.require_active()
-                decision = await service.run_turn(
+                decision = await run_gm_turn(
                     GMTurnContext(
                         chapter_id=session.chapter.chapter_id,
                         turn=session.turn,
@@ -73,7 +84,8 @@ def create_app(gm_transport: GMTransport | None = None) -> FastAPI:
                         scene_id=session.scene_id,
                         recent_history=tuple(session.recent_history),
                         player_input=body.player_input,
-                    )
+                    ),
+                    provider,
                 )
                 return session.apply_decision(body.player_input, decision)
         except SessionNotFound:
