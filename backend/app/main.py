@@ -12,7 +12,8 @@ from .infrastructure.gemini import (
     create_gemini_client,
     create_gemini_transport,
 )
-from .schemas import Error, StartRequest, StartResponse, TurnRequest, TurnResponse
+from .schemas.requests import StartRequest, TurnRequest
+from .schemas.responses import Error, StartResponse, TurnResponse
 from .store import SessionNotFound, SessionStore
 
 

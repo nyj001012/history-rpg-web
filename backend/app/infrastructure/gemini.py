@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 from ..application.gm_turn import GMProviderError, GMTurnContext
 from ..config import GeminiSettings
-from ..schemas import GMDecision
+from ..schemas.gm import GMDecision
 from .gemini_prompts import GM_SYSTEM_INSTRUCTION, serialize_context
 
 
